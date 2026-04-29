@@ -1,0 +1,93 @@
+{
+  "sidebar": {
+    "activeItem": "dashboard",
+    "items": [
+      { "key": "dashboard", "label": "Dashboard", "href": "#dashboard" },
+      { "key": "orders", "label": "Orders", "href": "#orders" },
+      { "key": "products", "label": "Products", "href": "#products" },
+      { "key": "customers", "label": "Customers", "href": "#customers" },
+      { "key": "settings", "label": "Settings", "href": "#settings" },
+      { "key": "marketing", "label": "Marketing", "href": "#marketing" }
+    ]
+  },
+  "header": {
+    "cartHref": "#cart",
+    "cartCount": 2,
+    "userName": "Kim Minchae",
+    "userAvatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+    "hasNotifications": true
+  },
+  "hero": {
+    "title": "Timeless Elegance in Every Look",
+    "description": "Upgrade your style with a watch that blends classic elegance and expert craftsmanship for any occasion.",
+    "price": "$120.00",
+    "buttonText": "Shop Now",
+    "image": "https://images.unsplash.com/photo-1547996160-81dfa63595dd?q=80&w=800&auto=format&fit=crop",
+    "stats": [
+      { "label": "Water Resistance", "value": "100 meters" },
+      { "label": "Weight", "value": "40G" }
+    ]
+  },
+  "review": {
+    "score": "4.7",
+    "basedOn": "Based on 602 ratings",
+    "total": "Total 600 Review",
+    "period": "This Month",
+    "breakdown": [
+      { "label": "5 Star", "value": 40 },
+      { "label": "4 Star", "value": 35 },
+      { "label": "3 Star", "value": 32 },
+      { "label": "2 Star", "value": 28 },
+      { "label": "1 Star", "value": 22 }
+    ]
+  },
+  "popularProducts": [
+    {
+      "name": "Rolex Speedmaster",
+      "price": "$85.00",
+      "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=600&auto=format&fit=crop",
+      "isNew": true,
+      "rating": 5
+    },
+    {
+      "name": "Omega 35",
+      "price": "$82.00",
+      "image": "https://images.unsplash.com/photo-1524592094714-0f0654e20314?q=80&w=600&auto=format&fit=crop",
+      "isNew": true,
+      "rating": 5
+    },
+    {
+      "name": "Tatin Time",
+      "price": "$75.00",
+      "image": "https://images.unsplash.com/photo-1511499767390-a8a197599624?q=80&w=600&auto=format&fit=crop",
+      "isNew": true,
+      "rating": 5
+    },
+    {
+      "name": "Omega Speedmaster",
+      "price": "$55.00",
+      "image": "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?q=80&w=600&auto=format&fit=crop",
+      "isNew": true,
+      "rating": 5
+    }
+  ],
+  "topSelling": {
+    "period": "This Year",
+    "title": "Heritage Classic XL",
+    "description": "The most popular model this year, combining our signature leather strap with a titanium casing and hand-wound movement.",
+    "buttonText": "Explore Detail",
+    "image": "https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?q=80&w=800&auto=format&fit=crop"
+  },
+  "footer": {
+    "description": "Redefining modern luxury through precision, elegance, and sustainable craftsmanship.",
+    "copyright": "© 2024 LUXE Premium Retail. All rights reserved.",
+    "collections": [
+      "Men's Watches",
+      "Women's Luxury",
+      "Limited Editions",
+      "Smart Collection"
+    ],
+    "company": ["Our Story", "Craftsmanship", "Sustainability", "Careers"],
+    "legal": ["Privacy Policy", "Terms of Service", "Cookies"]
+  }
+}
