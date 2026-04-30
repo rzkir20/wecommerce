@@ -7,6 +7,7 @@
     "nodejs_compat"
   ],
   "vars": {
+    "API_ORIGIN": "https://your-node-api.example.com",
     "DATABASE_URL": "mysql://root:@127.0.0.1:3306/wecommerce",
     "JWT_SECRET": "d15ff670aa9fa51d39564660b33fdb63affa5b7aa0bae151c96df9674376c998",
     "PORT": 8787,
