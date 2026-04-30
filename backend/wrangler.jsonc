@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "backend",
+  "name": "be-wecommerce",
   "main": "src/index.ts",
   "compatibility_date": "2026-04-29",
   "compatibility_flags": [
@@ -10,7 +10,7 @@
     "DATABASE_URL": "mysql://root:@127.0.0.1:3306/wecommerce",
     "JWT_SECRET": "d15ff670aa9fa51d39564660b33fdb63affa5b7aa0bae151c96df9674376c998",
     "PORT": 8787,
-    "CORS_ORIGIN": "http://localhost:3000",
+    "CORS_ORIGIN": "https://e-commerce.rizkiramadhan.web.id",
     "MYSQL_HOST": "127.0.0.1",
     "MYSQL_PORT": 3306,
     "MYSQL_USER": "root",
