@@ -40,6 +40,24 @@ import appCss from '../styles.css?url'
 
 import { API_PATHS, getApiUrl } from '../lib/config'
 
+const themeInitializerScript = `
+(() => {
+  const storageKey = 'vite-ui-theme';
+  const root = document.documentElement;
+  const storedTheme = localStorage.getItem(storageKey);
+  const isValidTheme = storedTheme === 'dark' || storedTheme === 'light' || storedTheme === 'system';
+  const preferredTheme = isValidTheme ? storedTheme : 'system';
+  const resolvedTheme =
+    preferredTheme === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : preferredTheme;
+
+  root.classList.remove('light', 'dark');
+  root.classList.add(resolvedTheme);
+  root.style.colorScheme = resolvedTheme;
+})();
+`
+
 const getSessionUser = createServerFn({ method: 'GET' }).handler(
   async (): Promise<AuthUser | null> => {
     const cookie = getRequestHeader('cookie') ?? ''
@@ -167,8 +185,12 @@ function AppShell({ activeItem }: AppShellProps) {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: themeInitializerScript }}
+          suppressHydrationWarning
+        />
         <HeadContent />
       </head>
       <body>
