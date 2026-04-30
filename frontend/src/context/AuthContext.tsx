@@ -10,6 +10,7 @@ import {
 import { API_PATHS, apiJson } from '../lib/config'
 
 const USER_KEY = 'wecommerce_user'
+const TOKEN_KEY = 'wecommerce_token'
 
 export type AuthUser = {
   id: string
@@ -49,6 +50,17 @@ function readStoredUser(): AuthUser | null {
   return null
 }
 
+function readStoredToken(): string | null {
+  try {
+    const raw = localStorage.getItem(TOKEN_KEY)
+    if (!raw) return null
+    const token = raw.trim()
+    return token || null
+  } catch {
+    return null
+  }
+}
+
 export function avatarUrlForEmail(email: string): string {
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`
 }
@@ -64,6 +76,11 @@ export function AuthProvider({
 
   const persist = useCallback((nextUser: AuthUser, nextToken: string | null = null) => {
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser))
+    if (nextToken) {
+      localStorage.setItem(TOKEN_KEY, nextToken)
+    } else {
+      localStorage.removeItem(TOKEN_KEY)
+    }
     setToken(nextToken)
     setUser(nextUser)
   }, [])
@@ -73,6 +90,7 @@ export function AuthProvider({
       // Tetap clear local state walau request logout gagal.
     })
     localStorage.removeItem(USER_KEY)
+    localStorage.removeItem(TOKEN_KEY)
     setToken(null)
     setUser(null)
   }, [])
@@ -82,23 +100,27 @@ export function AuthProvider({
     let cancelled = false
     const run = async () => {
       const u = readStoredUser()
+      const storedToken = readStoredToken()
       if (!u) {
         if (!cancelled) {
           setUser(null)
-          setToken(null)
+          setToken(storedToken)
           setReady(true)
         }
       }
       try {
-        const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.me)
+        const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.me, {
+          token: storedToken,
+        })
         if (!cancelled) {
-          setToken(null)
+          setToken(storedToken)
           setUser(res.user)
           localStorage.setItem(USER_KEY, JSON.stringify(res.user))
         }
       } catch {
         if (!cancelled) {
           localStorage.removeItem(USER_KEY)
+          localStorage.removeItem(TOKEN_KEY)
           setToken(null)
           setUser(null)
         }
