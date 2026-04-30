@@ -37,6 +37,21 @@ function isHttpsRequest(c: Context): boolean {
   return c.req.url.startsWith('https://')
 }
 
+function resolveCookieDomain(c: Context): string | undefined {
+  const { SESSION_COOKIE_DOMAIN } = c.get('env')
+  if (!SESSION_COOKIE_DOMAIN) return undefined
+
+  const requestHost = new URL(c.req.url).hostname.toLowerCase()
+  const configured = SESSION_COOKIE_DOMAIN.toLowerCase()
+  const normalized = configured.startsWith('.') ? configured.slice(1) : configured
+
+  if (requestHost === normalized || requestHost.endsWith(`.${normalized}`)) {
+    return configured
+  }
+
+  return undefined
+}
+
 export async function buildAuthTokenAndUser(
   c: Context,
   userId: string,
@@ -88,15 +103,16 @@ export async function buildAuthTokenAndUser(
 }
 
 export function setSessionCookie(c: Context, token: string) {
-  const { SESSION_COOKIE_DOMAIN, SESSION_COOKIE_SECURE } = c.get('env')
+  const { SESSION_COOKIE_SECURE } = c.get('env')
   const secure = SESSION_COOKIE_SECURE ?? isHttpsRequest(c)
+  const domain = resolveCookieDomain(c)
   setCookie(c, SESSION_COOKIE, token, {
     httpOnly: true,
     secure,
     sameSite: 'Lax',
     path: '/',
     maxAge: JWT_EXPIRES_SEC,
-    ...(SESSION_COOKIE_DOMAIN ? { domain: SESSION_COOKIE_DOMAIN } : {}),
+    ...(domain ? { domain } : {}),
   })
 }
 
@@ -262,10 +278,10 @@ export async function me(c: Context) {
 }
 
 export async function logout(c: Context) {
-  const { SESSION_COOKIE_DOMAIN } = c.get('env')
+  const domain = resolveCookieDomain(c)
   deleteCookie(c, SESSION_COOKIE, {
     path: '/',
-    ...(SESSION_COOKIE_DOMAIN ? { domain: SESSION_COOKIE_DOMAIN } : {}),
+    ...(domain ? { domain } : {}),
   })
   return c.json({ ok: true })
 }

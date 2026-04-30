@@ -55,6 +55,7 @@ SESSION_COOKIE_DOMAIN=.rizkiramadhan.web.id
 ```
 
 Nilai dengan format URL seperti `http://rizkiramadhan.web.id/` juga boleh, backend akan otomatis mengambil hostname-nya.
+Backend hanya akan memasang `domain` cookie jika host request cocok, jadi local dev di `localhost` tetap aman meskipun env ini terisi.
 
 Untuk atribut cookie `Secure`:
 
