@@ -7,7 +7,6 @@
     "nodejs_compat"
   ],
   "vars": {
-    "API_ORIGIN": "https://be-commerce.rizkiramadhan.web.id",
     "JWT_SECRET": "d15ff670aa9fa51d39564660b33fdb63affa5b7aa0bae151c96df9674376c998",
     "PORT": 8787,
     "CORS_ORIGIN": "https://e-commerce.rizkiramadhan.web.id",

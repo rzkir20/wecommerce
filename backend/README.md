@@ -96,7 +96,7 @@ Entry `src/index.ts` mengekspor app yang sama, tetapi route auth **membutuhkan M
 pnpm deploy
 ```
 
-Pastikan variabel dan database disesuaikan untuk environment produksi.
+Pastikan `API_ORIGIN` mengarah ke host **upstream Node API** (origin server), bukan ke domain Worker itu sendiri. Jika `API_ORIGIN` diisi ke host yang sama dengan Worker (mis. `be-commerce...`), request akan loop dan berujung timeout/522.
 
 ## Docker (Node API + MySQL)
 

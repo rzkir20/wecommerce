@@ -6,7 +6,6 @@ import { Hono } from 'hono'
 
 type WorkerBindings = {
   CORS_ORIGIN?: string
-  API_ORIGIN?: string
 }
 
 const app = new Hono<{ Bindings: WorkerBindings }>()
@@ -37,35 +36,16 @@ app.options('/api/*', (c) => {
 })
 
 app.all('/api/*', async (c) => {
-  const targetOrigin = c.env.API_ORIGIN
-  if (!targetOrigin) {
-    return c.json(
-      {
-        error: 'API_ORIGIN is not configured',
-      },
-      500,
-    )
-  }
-
-  const incoming = new URL(c.req.url)
-  const upstreamUrl = `${targetOrigin}${incoming.pathname}${incoming.search}`
-  const reqHeaders = new Headers(c.req.raw.headers)
-  reqHeaders.delete('host')
-
-  const upstreamRes = await fetch(upstreamUrl, {
-    method: c.req.method,
-    headers: reqHeaders,
-    body: c.req.method === 'GET' || c.req.method === 'HEAD' ? undefined : c.req.raw.body,
-    redirect: 'manual',
-  })
-
-  const headers = new Headers(upstreamRes.headers)
+  const headers = new Headers()
   withCorsHeaders(headers, resolveAllowedOrigin(c))
-  return new Response(upstreamRes.body, {
-    status: upstreamRes.status,
-    statusText: upstreamRes.statusText,
-    headers,
-  })
+  headers.set('Content-Type', 'application/json; charset=utf-8')
+  return new Response(
+    JSON.stringify({
+      error:
+        'API proxy on Worker is disabled. Point be-commerce.rizkiramadhan.web.id directly to Node API origin.',
+    }),
+    { status: 503, headers },
+  )
 })
 
 app.get('/', (c) =>
