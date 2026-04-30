@@ -103,13 +103,20 @@ export async function buildAuthTokenAndUser(
 }
 
 export function setSessionCookie(c: Context, token: string) {
-  const { SESSION_COOKIE_SECURE } = c.get('env')
-  const secure = SESSION_COOKIE_SECURE ?? isHttpsRequest(c)
+  const { SESSION_COOKIE_SECURE, SESSION_COOKIE_SAMESITE } = c.get('env')
+  const sameSite =
+    SESSION_COOKIE_SAMESITE === 'strict'
+      ? 'Strict'
+      : SESSION_COOKIE_SAMESITE === 'none'
+        ? 'None'
+        : 'Lax'
+  // Cookie SameSite=None wajib Secure=true, kalau tidak browser akan drop cookie.
+  const secure = sameSite === 'None' ? true : (SESSION_COOKIE_SECURE ?? isHttpsRequest(c))
   const domain = resolveCookieDomain(c)
   setCookie(c, SESSION_COOKIE, token, {
     httpOnly: true,
     secure,
-    sameSite: 'Lax',
+    sameSite,
     path: '/',
     maxAge: JWT_EXPIRES_SEC,
     ...(domain ? { domain } : {}),

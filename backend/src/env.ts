@@ -56,6 +56,7 @@ const schema = z.object({
       if (value === undefined) return undefined
       return value === 'true'
     }),
+  SESSION_COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).optional(),
 })
 
 export type AppEnv = z.infer<typeof schema>

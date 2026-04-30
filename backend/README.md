@@ -68,6 +68,26 @@ SESSION_COOKIE_SECURE=
 # SESSION_COOKIE_SECURE=false
 ```
 
+Untuk atribut cookie `SameSite`:
+
+```env
+# default:
+SESSION_COOKIE_SAMESITE=lax
+
+# opsi lain:
+# SESSION_COOKIE_SAMESITE=strict
+# SESSION_COOKIE_SAMESITE=none
+```
+
+Jika frontend dan API beda domain (cross-site) di production, gunakan:
+
+```env
+SESSION_COOKIE_SAMESITE=none
+SESSION_COOKIE_SECURE=true
+```
+
+Tanpa kombinasi ini, browser modern biasanya tidak menyimpan cookie session pada request cross-site sehingga saat refresh user terlihat logout.
+
 ## Cloudflare Worker (`pnpm dev:cf`)
 
 Entry `src/index.ts` mengekspor app yang sama, tetapi route auth **membutuhkan MySQL** — Worker tidak cocok untuk `mysql2` langsung. Gunakan Node (`pnpm dev`) untuk auth, atau nanti sambungkan lewat Hyperdrive / layanan DB yang didukung Workers.
@@ -100,4 +120,4 @@ docker compose exec api pnpm prisma:migrate -- --name init
 docker compose exec api pnpm prisma:generate
 ```
 
-`JWT_SECRET`, `CORS_ORIGIN`, `SESSION_COOKIE_DOMAIN`, `SESSION_COOKIE_SECURE`, dan `DATABASE_URL` bisa diubah di `docker-compose.yml`.
+`JWT_SECRET`, `CORS_ORIGIN`, `SESSION_COOKIE_DOMAIN`, `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_SAMESITE`, dan `DATABASE_URL` bisa diubah di `docker-compose.yml`.
