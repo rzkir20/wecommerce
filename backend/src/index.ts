@@ -1,6 +1,6 @@
 /**
  * Cloudflare Worker entrypoint.
- * Keep this file Worker-safe (no Prisma imports), otherwise wrangler bundling fails.
+ * Keep this file Worker-safe (no mysql2/Node-only imports), otherwise wrangler bundling fails.
  */
 import { Hono } from 'hono'
 
@@ -11,7 +11,7 @@ app.get('/', (c) =>
     ok: true,
     service: 'wecommerce-api-worker',
     message:
-      'Worker aktif, tapi auth API berbasis Prisma/MySQL harus dijalankan di Node runtime.',
+      'Worker aktif, tapi auth API berbasis MySQL Node runtime dijalankan via server Node.',
   }),
 )
 

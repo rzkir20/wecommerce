@@ -101,6 +101,17 @@ export const Route = createRootRoute({
     const initialUser = await getSessionUser()
     return { initialUser }
   },
+  notFoundComponent: () => (
+    <div className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
+      <div className="text-center">
+        <p className="text-sm font-semibold tracking-widest text-muted-foreground uppercase">404</p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight">Page Not Found</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Halaman yang kamu buka tidak ditemukan.
+        </p>
+      </div>
+    </div>
+  ),
   component: AppLayout,
   shellComponent: RootDocument,
 })

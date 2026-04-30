@@ -6,7 +6,9 @@ import { sign } from 'hono/jwt'
 
 import bcrypt from 'bcryptjs'
 
-import { getPrisma } from '../lib/db.js'
+import type { RowDataPacket } from 'mysql2'
+
+import { getDb } from '../lib/db.js'
 
 const JWT_EXPIRES_SEC = 60 * 60 * 24 * 7
 
@@ -25,8 +27,31 @@ export type AuthUser = {
   isVerified: boolean
 }
 
+type DbUserRow = RowDataPacket & {
+  id: string
+  email: string
+  name: string
+  avatar: string | null
+  phone: string | null
+  role: UserRole
+  is_verified: number | boolean
+  password_hash: string
+}
+
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+function toAuthUser(row: DbUserRow): AuthUser {
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    avatar: row.avatar,
+    phone: row.phone,
+    role: row.role,
+    isVerified: Boolean(row.is_verified),
+  }
 }
 
 function isHttpsRequest(c: Context): boolean {
@@ -57,22 +82,19 @@ export async function buildAuthTokenAndUser(
   userId: string,
 ): Promise<{ token: string; user: AuthUser }> {
   const { JWT_SECRET } = c.get('env')
-  const prisma = getPrisma()
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      avatar: true,
-      phone: true,
-      role: true,
-      isVerified: true,
-    },
-  })
-  if (!user) {
+  const db = getDb()
+  const [rows] = await db.execute<DbUserRow[]>(
+    `SELECT id, email, name, avatar, phone, role, is_verified, password_hash
+     FROM users
+     WHERE id = ?
+     LIMIT 1`,
+    [userId],
+  )
+  const row = rows[0]
+  if (!row) {
     throw new Error('User not found')
   }
+  const user = toAuthUser(row)
 
   const now = Math.floor(Date.now() / 1000)
   const token = await sign(
@@ -161,25 +183,22 @@ export async function register(c: Context) {
 
   const id = crypto.randomUUID()
   const passwordHash = bcrypt.hashSync(password, 10)
-  const prisma = getPrisma()
+  const db = getDb()
 
   try {
-    await prisma.user.create({
-      data: {
-        id,
-        email,
-        name,
-        avatar: avatar || null,
-        phone: phone || null,
-        role,
-        isVerified,
-        passwordHash,
-      },
-      select: { id: true },
-    })
+    await db.execute(
+      `INSERT INTO users (id, email, name, avatar, phone, role, is_verified, password_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, email, name, avatar || null, phone || null, role, isVerified, passwordHash],
+    )
   } catch (e: unknown) {
-    // Prisma: unique constraint violation
-    if (e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'P2002') {
+    if (
+      e &&
+      typeof e === 'object' &&
+      'code' in e &&
+      ((e as { code?: string }).code === 'ER_DUP_ENTRY' ||
+        (e as { code?: string }).code === 'ER_DUP_ENTRY_WITH_KEY_NAME')
+    ) {
       return c.json({ error: 'Email already registered' }, 409)
     }
     console.error(e)
@@ -218,25 +237,20 @@ export async function login(c: Context) {
     return c.json({ error: 'Invalid email or password' }, 401)
   }
 
-  const prisma = getPrisma()
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      avatar: true,
-      phone: true,
-      role: true,
-      isVerified: true,
-      passwordHash: true,
-    },
-  })
+  const db = getDb()
+  const [rows] = await db.execute<DbUserRow[]>(
+    `SELECT id, email, name, avatar, phone, role, is_verified, password_hash
+     FROM users
+     WHERE email = ?
+     LIMIT 1`,
+    [email],
+  )
+  const user = rows[0]
   if (!user) {
     return c.json({ error: 'Invalid email or password' }, 401)
   }
 
-  const ok = bcrypt.compareSync(password, user.passwordHash)
+  const ok = bcrypt.compareSync(password, user.password_hash)
   if (!ok) {
     return c.json({ error: 'Invalid email or password' }, 401)
   }
@@ -253,7 +267,7 @@ export async function login(c: Context) {
       avatar: user.avatar,
       phone: user.phone,
       role: user.role,
-      isVerified: user.isVerified,
+      isVerified: Boolean(user.is_verified),
     },
   })
 }
@@ -264,24 +278,20 @@ export async function me(c: Context) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  const prisma = getPrisma()
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      avatar: true,
-      phone: true,
-      role: true,
-      isVerified: true,
-    },
-  })
-  if (!user) {
+  const db = getDb()
+  const [rows] = await db.execute<DbUserRow[]>(
+    `SELECT id, email, name, avatar, phone, role, is_verified, password_hash
+     FROM users
+     WHERE id = ?
+     LIMIT 1`,
+    [userId],
+  )
+  const row = rows[0]
+  if (!row) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  return c.json({ user })
+  return c.json({ user: toAuthUser(row) })
 }
 
 export async function logout(c: Context) {

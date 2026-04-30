@@ -1,6 +1,6 @@
 # wecommerce API (Hono)
 
-## Auth + MySQL + Prisma (development)
+## Auth + MySQL (development)
 
 ### 1) Siapkan MySQL lokal (phpMyAdmin / XAMPP / Laragon)
 
@@ -35,13 +35,11 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 Salin output ke baris `JWT_SECRET=` di `.env`.
 
-### 3) Install dependencies + migrate schema (Prisma)
+### 3) Install dependencies + migrate schema manual (SQL)
 
 ```bash
 pnpm install
-pnpm prisma:migrate -- --name init
-pnpm prisma:generate
-pnpm prisma db push
+mysql -u root -p < schema.sql
 pnpm dev
 ```
 
@@ -102,7 +100,7 @@ Pastikan variabel dan database disesuaikan untuk environment produksi.
 
 ## Docker (Node API + MySQL)
 
-Jalankan API berbasis Prisma di container Node (bukan Worker):
+Jalankan API berbasis Node + MySQL di container:
 
 ```bash
 docker compose up -d --build
@@ -113,11 +111,10 @@ Service yang dijalankan:
 - API: `http://localhost:8787`
 - MySQL: `localhost:3306`
 
-Setelah container up pertama kali, jalankan migrasi:
+Setelah container up pertama kali, jalankan schema manual:
 
 ```bash
-docker compose exec api pnpm prisma:migrate -- --name init
-docker compose exec api pnpm prisma:generate
+docker compose exec -T mysql mysql -uroot -proot wecommerce < schema.sql
 ```
 
 `JWT_SECRET`, `CORS_ORIGIN`, `SESSION_COOKIE_DOMAIN`, `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_SAMESITE`, dan `DATABASE_URL` bisa diubah di `docker-compose.yml`.

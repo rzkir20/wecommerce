@@ -34,7 +34,9 @@ function LoginPage() {
   const [loginMode, setLoginMode] = useState<'email' | 'qr'>('email')
   const [qrLoading, setQrLoading] = useState(false)
   const [qrToken, setQrToken] = useState<string | null>(null)
-  const [qrStatus, setQrStatus] = useState<'idle' | 'pending' | 'approved' | 'expired'>('idle')
+  const [qrStatus, setQrStatus] = useState<
+    'idle' | 'pending' | 'approved' | 'expired'
+  >('idle')
   const [qrExpiresAt, setQrExpiresAt] = useState<number | null>(null)
 
   async function onSubmit(e: React.FormEvent) {
@@ -60,9 +62,12 @@ function LoginPage() {
     setError(null)
     setQrLoading(true)
     try {
-      const res = await apiJson<{ qrToken: string; expiresAt: number }>(API_PATHS.qr.init, {
-        method: 'POST',
-      })
+      const res = await apiJson<{ qrToken: string; expiresAt: number }>(
+        API_PATHS.qr.init,
+        {
+          method: 'POST',
+        },
+      )
       setQrToken(res.qrToken)
       setQrExpiresAt(res.expiresAt)
       setQrStatus('pending')
@@ -82,7 +87,6 @@ function LoginPage() {
         const res = await apiJson<{
           status: 'pending' | 'approved' | 'expired' | 'used'
           expiresAt?: number
-          token?: string
           user?: { id: string; email: string; name: string }
         }>(API_PATHS.qr.status(qrToken))
         if (res.status === 'pending') {
@@ -91,16 +95,21 @@ function LoginPage() {
         }
         if (res.status === 'approved' && res.user) {
           setQrStatus('approved')
-          loginWithQr({ user: res.user, token: res.token ?? null })
-          void navigate({ to: '/' })
+          loginWithQr({ user: res.user })
+          void navigate({ to: '/', replace: true })
           return
         }
       } catch (err) {
-        if (err instanceof ApiError && (err.status === 410 || err.status === 404)) {
+        if (
+          err instanceof ApiError &&
+          (err.status === 410 || err.status === 404)
+        ) {
           setQrStatus('expired')
           return
         }
-        setError(err instanceof ApiError ? err.message : 'Gagal memeriksa status QR')
+        setError(
+          err instanceof ApiError ? err.message : 'Gagal memeriksa status QR',
+        )
       }
     }, 2000)
     return () => {
@@ -208,7 +217,7 @@ function LoginPage() {
             </button>
           </div>
 
-          <form className="space-y-8" onSubmit={onSubmit}>
+          <form className="space-y-8" onSubmit={onSubmit} method="post">
             {error ? (
               <p
                 className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
