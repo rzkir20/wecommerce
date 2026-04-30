@@ -1,7 +1,12 @@
-import { Bell, Search } from 'lucide-react'
+import { Bell, QrCode, Search } from 'lucide-react'
+
+import { useState } from 'react'
 
 import { avatarUrlForEmail } from '#/context/AuthContext'
+
 import { ModeToggle } from '#/components/ui/mode-toggle'
+
+import { ScanQrDialog } from '#/components/profile/scan-qr'
 
 type ProfileHeaderProps = {
   userName?: string | null
@@ -11,6 +16,7 @@ type ProfileHeaderProps = {
 export function ProfileHeader({ userName, userEmail }: ProfileHeaderProps) {
   const displayName = userName?.trim() || 'space.digitalia'
   const email = userEmail?.trim() || 'spa.digitalia@example.com'
+  const [scanOpen, setScanOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-50 h-20 border-b border-border bg-background/95 backdrop-blur">
@@ -38,6 +44,14 @@ export function ProfileHeader({ userName, userEmail }: ProfileHeaderProps) {
           <ModeToggle />
           <button
             type="button"
+            onClick={() => setScanOpen(true)}
+            className="group relative flex h-11 items-center gap-2 rounded-xl bg-muted px-3 text-xs font-bold tracking-wider uppercase transition-colors hover:bg-accent"
+          >
+            <QrCode className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+            Scan QR
+          </button>
+          <button
+            type="button"
             className="group relative flex h-11 w-11 items-center justify-center rounded-xl bg-muted transition-colors hover:bg-accent"
           >
             <Bell className="h-5 w-5 text-muted-foreground group-hover:text-foreground" />
@@ -63,6 +77,7 @@ export function ProfileHeader({ userName, userEmail }: ProfileHeaderProps) {
           </div>
         </div>
       </div>
+      <ScanQrDialog open={scanOpen} onOpenChange={setScanOpen} />
     </header>
   )
 }
