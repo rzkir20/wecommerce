@@ -7,6 +7,6 @@
   ],
   "main": "@tanstack/react-start/server-entry",
   "vars": {
-    "VITE_API_BASE_URL": "https://be-commerce.rizkiramadhan.web.id"
+    "VITE_API_BASE_URL": "be-wecommerce.rr8027896.workers.dev"
   }
 }

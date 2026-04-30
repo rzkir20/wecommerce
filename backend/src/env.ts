@@ -31,7 +31,7 @@ const schema = z.object({
     .string()
     .min(16, 'JWT_SECRET harus minimal 16 karakter (lihat .env.example)'),
   /** Optional DSN MySQL, akan di-build dari MYSQL_* kalau kosong. */
-  DATABASE_URL: z.string().optional(),
+  API_ORIGIN: z.string().optional(),
   MYSQL_HOST: z.string().default('127.0.0.1'),
   MYSQL_PORT: z.coerce.number().default(3306),
   MYSQL_USER: z.string().default('root'),
@@ -66,13 +66,13 @@ export function loadEnv(): AppEnv {
     process.exit(1)
   }
   const env = parsed.data
-  if (!env.DATABASE_URL) {
+  if (!env.API_ORIGIN) {
     const user = encodeURIComponent(env.MYSQL_USER)
     const pass = encodeURIComponent(env.MYSQL_PASSWORD)
     const auth = env.MYSQL_PASSWORD ? `${user}:${pass}` : `${user}:`
-    env.DATABASE_URL = `mysql://${auth}@${env.MYSQL_HOST}:${env.MYSQL_PORT}/${env.MYSQL_DATABASE}`
+    env.API_ORIGIN = `https://${env.MYSQL_HOST}:${env.MYSQL_PORT}/${env.MYSQL_DATABASE}`
   }
-  // Tetap dipasang agar driver/library yang membaca DATABASE_URL tetap kompatibel.
-  process.env.DATABASE_URL = env.DATABASE_URL
+  // Tetap dipasang agar driver/library yang membaca API_ORIGIN tetap kompatibel.
+  process.env.API_ORIGIN = env.API_ORIGIN
   return env
 }
