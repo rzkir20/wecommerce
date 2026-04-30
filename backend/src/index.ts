@@ -1,15 +1,10 @@
-/**
- * Cloudflare Worker (stub). API penuh + MySQL: `pnpm dev` (Node).
- */
-import { Hono } from 'hono'
+import { createApp } from './app.js'
+import { loadEnv } from './env.js'
+import { initDb } from './lib/db.js'
 
-const app = new Hono()
+const env = loadEnv()
+initDb(env)
 
-app.get('/', (c) =>
-  c.json({
-    ok: true,
-    message: 'Worker stub — gunakan server Node (pnpm dev) untuk auth + MySQL',
-  }),
-)
+const app = createApp(env)
 
 export default app
