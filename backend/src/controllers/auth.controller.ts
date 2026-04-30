@@ -29,6 +29,14 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
+function isHttpsRequest(c: Context): boolean {
+  const forwardedProto = c.req.header('x-forwarded-proto')
+  if (forwardedProto) {
+    return forwardedProto.split(',')[0]?.trim().toLowerCase() === 'https'
+  }
+  return c.req.url.startsWith('https://')
+}
+
 export async function buildAuthTokenAndUser(
   c: Context,
   userId: string,
@@ -80,10 +88,11 @@ export async function buildAuthTokenAndUser(
 }
 
 export function setSessionCookie(c: Context, token: string) {
-  const { SESSION_COOKIE_DOMAIN } = c.get('env')
+  const { SESSION_COOKIE_DOMAIN, SESSION_COOKIE_SECURE } = c.get('env')
+  const secure = SESSION_COOKIE_SECURE ?? isHttpsRequest(c)
   setCookie(c, SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: false,
+    secure,
     sameSite: 'Lax',
     path: '/',
     maxAge: JWT_EXPIRES_SEC,

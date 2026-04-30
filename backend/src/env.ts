@@ -49,6 +49,13 @@ const schema = z.object({
       const normalized = normalizeCookieDomain(value)
       return normalized || undefined
     }),
+  SESSION_COOKIE_SECURE: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => {
+      if (value === undefined) return undefined
+      return value === 'true'
+    }),
 })
 
 export type AppEnv = z.infer<typeof schema>

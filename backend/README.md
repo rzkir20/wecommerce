@@ -56,6 +56,17 @@ SESSION_COOKIE_DOMAIN=.rizkiramadhan.web.id
 
 Nilai dengan format URL seperti `http://rizkiramadhan.web.id/` juga boleh, backend akan otomatis mengambil hostname-nya.
 
+Untuk atribut cookie `Secure`:
+
+```env
+# auto (default): aktif saat request HTTPS
+SESSION_COOKIE_SECURE=
+
+# atau paksa:
+# SESSION_COOKIE_SECURE=true
+# SESSION_COOKIE_SECURE=false
+```
+
 ## Cloudflare Worker (`pnpm dev:cf`)
 
 Entry `src/index.ts` mengekspor app yang sama, tetapi route auth **membutuhkan MySQL** — Worker tidak cocok untuk `mysql2` langsung. Gunakan Node (`pnpm dev`) untuk auth, atau nanti sambungkan lewat Hyperdrive / layanan DB yang didukung Workers.
@@ -88,4 +99,4 @@ docker compose exec api pnpm prisma:migrate -- --name init
 docker compose exec api pnpm prisma:generate
 ```
 
-`JWT_SECRET`, `CORS_ORIGIN`, `SESSION_COOKIE_DOMAIN`, dan `DATABASE_URL` bisa diubah di `docker-compose.yml`.
+`JWT_SECRET`, `CORS_ORIGIN`, `SESSION_COOKIE_DOMAIN`, `SESSION_COOKIE_SECURE`, dan `DATABASE_URL` bisa diubah di `docker-compose.yml`.
