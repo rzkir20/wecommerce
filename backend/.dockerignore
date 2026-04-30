@@ -1,0 +1,12 @@
+node_modules
+.pnpm-store
+.git
+.gitignore
+.env
+.env.*
+*.log
+dist
+coverage
+.wrangler
+README.md
+Postman.md

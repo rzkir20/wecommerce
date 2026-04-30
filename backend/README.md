@@ -59,3 +59,25 @@ pnpm deploy
 ```
 
 Pastikan variabel dan database disesuaikan untuk environment produksi.
+
+## Docker (Node API + MySQL)
+
+Jalankan API berbasis Prisma di container Node (bukan Worker):
+
+```bash
+docker compose up -d --build
+```
+
+Service yang dijalankan:
+
+- API: `http://localhost:8787`
+- MySQL: `localhost:3306`
+
+Setelah container up pertama kali, jalankan migrasi:
+
+```bash
+docker compose exec api pnpm prisma:migrate -- --name init
+docker compose exec api pnpm prisma:generate
+```
+
+`JWT_SECRET`, `CORS_ORIGIN`, dan `DATABASE_URL` bisa diubah di `docker-compose.yml`.

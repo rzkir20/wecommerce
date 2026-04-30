@@ -1,0 +1,32 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: wecommerce-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wecommerce
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wecommerce-api
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      PORT: 8787
+      JWT_SECRET: change-this-min-16-characters
+      CORS_ORIGIN: http://localhost:3000
+      DATABASE_URL: mysql://root:root@mysql:3306/wecommerce
+    ports:
+      - "8787:8787"
+
+volumes:
+  mysql_data:
