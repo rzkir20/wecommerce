@@ -9,38 +9,173 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProductsRouteImport } from './routes/products'
+import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ordersCheckoutRouteImport } from './routes/(orders)/checkout'
+import { Route as ordersCartRouteImport } from './routes/(orders)/cart'
+import { Route as authVerificationsRouteImport } from './routes/(auth)/verifications'
+import { Route as authRegisterRouteImport } from './routes/(auth)/register'
+import { Route as authLoginRouteImport } from './routes/(auth)/login'
+import { Route as authForgetPasswordRouteImport } from './routes/(auth)/forget-password'
+import { Route as authChangePasswordRouteImport } from './routes/(auth)/change-password'
 
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SlugRoute = SlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ordersCheckoutRoute = ordersCheckoutRouteImport.update({
+  id: '/(orders)/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ordersCartRoute = ordersCartRouteImport.update({
+  id: '/(orders)/cart',
+  path: '/cart',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authVerificationsRoute = authVerificationsRouteImport.update({
+  id: '/(auth)/verifications',
+  path: '/verifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authRegisterRoute = authRegisterRouteImport.update({
+  id: '/(auth)/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authLoginRoute = authLoginRouteImport.update({
+  id: '/(auth)/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authForgetPasswordRoute = authForgetPasswordRouteImport.update({
+  id: '/(auth)/forget-password',
+  path: '/forget-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authChangePasswordRoute = authChangePasswordRouteImport.update({
+  id: '/(auth)/change-password',
+  path: '/change-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
+  '/products': typeof ProductsRoute
+  '/change-password': typeof authChangePasswordRoute
+  '/forget-password': typeof authForgetPasswordRoute
+  '/login': typeof authLoginRoute
+  '/register': typeof authRegisterRoute
+  '/verifications': typeof authVerificationsRoute
+  '/cart': typeof ordersCartRoute
+  '/checkout': typeof ordersCheckoutRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
+  '/products': typeof ProductsRoute
+  '/change-password': typeof authChangePasswordRoute
+  '/forget-password': typeof authForgetPasswordRoute
+  '/login': typeof authLoginRoute
+  '/register': typeof authRegisterRoute
+  '/verifications': typeof authVerificationsRoute
+  '/cart': typeof ordersCartRoute
+  '/checkout': typeof ordersCheckoutRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
+  '/products': typeof ProductsRoute
+  '/(auth)/change-password': typeof authChangePasswordRoute
+  '/(auth)/forget-password': typeof authForgetPasswordRoute
+  '/(auth)/login': typeof authLoginRoute
+  '/(auth)/register': typeof authRegisterRoute
+  '/(auth)/verifications': typeof authVerificationsRoute
+  '/(orders)/cart': typeof ordersCartRoute
+  '/(orders)/checkout': typeof ordersCheckoutRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/$slug'
+    | '/products'
+    | '/change-password'
+    | '/forget-password'
+    | '/login'
+    | '/register'
+    | '/verifications'
+    | '/cart'
+    | '/checkout'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/$slug'
+    | '/products'
+    | '/change-password'
+    | '/forget-password'
+    | '/login'
+    | '/register'
+    | '/verifications'
+    | '/cart'
+    | '/checkout'
+  id:
+    | '__root__'
+    | '/'
+    | '/$slug'
+    | '/products'
+    | '/(auth)/change-password'
+    | '/(auth)/forget-password'
+    | '/(auth)/login'
+    | '/(auth)/register'
+    | '/(auth)/verifications'
+    | '/(orders)/cart'
+    | '/(orders)/checkout'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SlugRoute: typeof SlugRoute
+  ProductsRoute: typeof ProductsRoute
+  authChangePasswordRoute: typeof authChangePasswordRoute
+  authForgetPasswordRoute: typeof authForgetPasswordRoute
+  authLoginRoute: typeof authLoginRoute
+  authRegisterRoute: typeof authRegisterRoute
+  authVerificationsRoute: typeof authVerificationsRoute
+  ordersCartRoute: typeof ordersCartRoute
+  ordersCheckoutRoute: typeof ordersCheckoutRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$slug': {
+      id: '/$slug'
+      path: '/$slug'
+      fullPath: '/$slug'
+      preLoaderRoute: typeof SlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +183,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(orders)/checkout': {
+      id: '/(orders)/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof ordersCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(orders)/cart': {
+      id: '/(orders)/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof ordersCartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/verifications': {
+      id: '/(auth)/verifications'
+      path: '/verifications'
+      fullPath: '/verifications'
+      preLoaderRoute: typeof authVerificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/register': {
+      id: '/(auth)/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof authRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/login': {
+      id: '/(auth)/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof authLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/forget-password': {
+      id: '/(auth)/forget-password'
+      path: '/forget-password'
+      fullPath: '/forget-password'
+      preLoaderRoute: typeof authForgetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/change-password': {
+      id: '/(auth)/change-password'
+      path: '/change-password'
+      fullPath: '/change-password'
+      preLoaderRoute: typeof authChangePasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SlugRoute: SlugRoute,
+  ProductsRoute: ProductsRoute,
+  authChangePasswordRoute: authChangePasswordRoute,
+  authForgetPasswordRoute: authForgetPasswordRoute,
+  authLoginRoute: authLoginRoute,
+  authRegisterRoute: authRegisterRoute,
+  authVerificationsRoute: authVerificationsRoute,
+  ordersCartRoute: ordersCartRoute,
+  ordersCheckoutRoute: ordersCheckoutRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

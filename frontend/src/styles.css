@@ -146,13 +146,94 @@ body {
 
 @layer components {
   .glass-panel {
-    background: #18181b;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--card);
+    color: var(--card-foreground);
+    border: 1px solid var(--border);
   }
 
   .stat-badge {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: color-mix(in oklch, var(--foreground) 4%, transparent);
+    border: 1px solid var(--border);
     backdrop-filter: blur(8px);
+  }
+
+  .neon-glow {
+    box-shadow: 0 0 20px rgba(212, 255, 63, 0.25);
+  }
+
+  .input-premium {
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    width: 100%;
+    font-size: 0.875rem;
+    color: var(--foreground);
+    outline: none;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .input-premium:focus {
+    border-color: #d4ff3f;
+    background: color-mix(in oklch, var(--muted) 90%, var(--foreground));
+    box-shadow: 0 0 10px rgba(212, 255, 63, 0.1);
+  }
+
+  .input-premium::placeholder {
+    color: var(--muted-foreground);
+  }
+
+  .checkout-btn {
+    background-color: #d4ff3f;
+    color: #000000;
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+    box-shadow: 0 0 20px rgba(212, 255, 63, 0.15);
+  }
+
+  .checkout-btn:hover {
+    background-color: #c2f02b;
+    transform: translateY(-1px);
+    box-shadow: 0 0 30px rgba(212, 255, 63, 0.25);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--foreground) 12%, transparent);
+    border-radius: 10px;
+  }
+
+  .cart-modal-panel {
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    background: color-mix(in oklch, var(--card) 92%, transparent);
+    border-color: var(--border);
+  }
+
+  .animate-cart-sheet-in {
+    animation: cart-sheet-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes cart-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
