@@ -4,15 +4,20 @@ import {
   ArrowRight,
   Check,
   Eye,
+  EyeOff,
   Lock,
   Mail,
   ShieldCheck,
   User,
 } from 'lucide-react'
-import { useState } from 'react'
+
+import { useMemo, useState } from 'react'
 
 import { useAuth } from '../../context/AuthContext'
-import { ApiError } from '../../lib/api'
+
+import { ApiError } from '../../lib/config'
+
+import { registerSchema } from '../../lib/validations'
 
 export const Route = createFileRoute('/(auth)/register')({
   component: RegisterPage,
@@ -25,19 +30,43 @@ function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const passwordChecks = useMemo(
+    () => ({
+      minLength: password.length >= 8,
+      hasUpper: /[A-Z]/.test(password),
+      hasLower: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+    }),
+    [password],
+  )
+  const strengthScore = Object.values(passwordChecks).filter(Boolean).length
+  const strengthLevel =
+    strengthScore <= 1 ? 'Weak' : strengthScore <= 3 ? 'Medium' : 'Strong'
+  const strengthBars = [0, 1, 2, 3]
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    if (password !== confirmPassword) {
-      setError('Konfirmasi kata sandi tidak cocok')
+    const parsed = registerSchema.safeParse({
+      name,
+      email,
+      password,
+      confirmPassword,
+    })
+    if (!parsed.success) {
+      setError(
+        parsed.error.issues[0]?.message ?? 'Data pendaftaran tidak valid',
+      )
       return
     }
+
     setLoading(true)
     try {
-      await register(name.trim(), email.trim(), password)
+      await register(parsed.data.name, parsed.data.email, parsed.data.password)
       await navigate({ to: '/' })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Registrasi gagal')
@@ -189,7 +218,7 @@ function RegisterPage() {
                   <Lock className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     id="register-password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     name="password"
                     autoComplete="new-password"
                     required
@@ -201,22 +230,37 @@ function RegisterPage() {
                   />
                   <button
                     type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={
+                      showPassword
+                        ? 'Sembunyikan password'
+                        : 'Tampilkan password'
+                    }
                     className="absolute top-1/2 right-4 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    <Eye className="h-4 w-4" />
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
                 <div className="flex gap-1.5 px-1">
-                  <div className="h-1 flex-1 rounded bg-[#d4ff3f]" />
-                  <div className="h-1 flex-1 rounded bg-[#d4ff3f]" />
-                  <div className="h-1 flex-1 rounded bg-muted" />
+                  {strengthBars.map((barIndex) => (
+                    <div
+                      key={barIndex}
+                      className={`h-1 flex-1 rounded ${
+                        barIndex < strengthScore ? 'bg-[#d4ff3f]' : 'bg-muted'
+                      }`}
+                    />
+                  ))}
                 </div>
                 <div className="flex justify-between px-1">
                   <p className="text-[9px] font-black tracking-widest text-[#d4ff3f] uppercase">
-                    Medium Strength
+                    {strengthLevel} Strength
                   </p>
                   <p className="text-[9px] font-bold tracking-widest text-muted-foreground uppercase">
-                    8+ Characters
+                    8+ chars, upper/lowercase, number
                   </p>
                 </div>
               </div>
@@ -232,7 +276,7 @@ function RegisterPage() {
                   <ShieldCheck className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     id="register-confirm"
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     name="confirmPassword"
                     autoComplete="new-password"
                     required
@@ -242,6 +286,22 @@ function RegisterPage() {
                     placeholder="••••••••"
                     className="w-full rounded-2xl border border-border bg-muted/40 py-4 pr-4 pl-12 text-sm font-medium text-foreground transition-all placeholder:text-muted-foreground focus:border-[#d4ff3f] focus:bg-muted focus:outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    aria-label={
+                      showConfirmPassword
+                        ? 'Sembunyikan konfirmasi password'
+                        : 'Tampilkan konfirmasi password'
+                    }
+                    className="absolute top-1/2 right-4 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               </div>
 

@@ -12,6 +12,8 @@ import { envMiddleware } from './middleware/env.middleware.js'
 
 import { authRoutes } from './routes/auth.routes.js'
 
+import { qrRoutes } from './routes/qr.routes.js'
+
 export function createApp(env: AppEnv) {
   const app = new Hono()
 
@@ -25,10 +27,12 @@ export function createApp(env: AppEnv) {
       ok: true,
       service: 'wecommerce-api',
       auth: '/api/auth',
+      qr: '/api/qr',
     }),
   )
 
   app.route('/api/auth', authRoutes)
+  app.route('/api/qr', qrRoutes)
 
   return app
 }

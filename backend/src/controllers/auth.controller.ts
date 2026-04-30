@@ -1,38 +1,103 @@
 import type { Context } from 'hono'
 
+import { deleteCookie, setCookie } from 'hono/cookie'
+
 import { sign } from 'hono/jwt'
 
 import bcrypt from 'bcryptjs'
 
-import { getPool } from '../lib/db.js'
+import { getPrisma } from '../lib/db.js'
 
 const JWT_EXPIRES_SEC = 60 * 60 * 24 * 7
 
-type UserRow = {
-  id: string
-  email: string
-  name: string
-  password_hash: string
-}
+const SESSION_COOKIE = 'session'
+
+const ALLOWED_ROLES = ['super_admins', 'affiliate', 'users', 'seller'] as const
+type UserRole = (typeof ALLOWED_ROLES)[number]
 
 export type AuthUser = {
   id: string
   email: string
   name: string
+  avatar: string | null
+  phone: string | null
+  role: UserRole
+  isVerified: boolean
 }
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
-function rowToUser(row: UserRow): AuthUser {
-  return { id: row.id, email: row.email, name: row.name }
+export async function buildAuthTokenAndUser(
+  c: Context,
+  userId: string,
+): Promise<{ token: string; user: AuthUser }> {
+  const { JWT_SECRET } = c.get('env')
+  const prisma = getPrisma()
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      avatar: true,
+      phone: true,
+      role: true,
+      isVerified: true,
+    },
+  })
+  if (!user) {
+    throw new Error('User not found')
+  }
+
+  const now = Math.floor(Date.now() / 1000)
+  const token = await sign(
+    {
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      isVerified: user.isVerified,
+      iat: now,
+      exp: now + JWT_EXPIRES_SEC,
+    },
+    JWT_SECRET,
+  )
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      phone: user.phone,
+      role: user.role,
+      isVerified: user.isVerified,
+    },
+  }
+}
+
+export function setSessionCookie(c: Context, token: string) {
+  setCookie(c, SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'Lax',
+    path: '/',
+    maxAge: JWT_EXPIRES_SEC,
+  })
 }
 
 export async function register(c: Context) {
-  const { JWT_SECRET } = c.get('env')
-
-  let body: { email?: string; password?: string; name?: string }
+  let body: {
+    email?: string
+    password?: string
+    name?: string
+    avatar?: string
+    phone?: string
+    role?: string
+  }
   try {
     body = await c.req.json()
   } catch {
@@ -42,6 +107,10 @@ export async function register(c: Context) {
   const email = String(body.email ?? '').trim().toLowerCase()
   const password = String(body.password ?? '')
   const name = String(body.name ?? '').trim()
+  const avatar = String(body.avatar ?? '').trim()
+  const phone = String(body.phone ?? '').trim()
+  const role = String(body.role ?? 'users').trim() as UserRole
+  const isVerified = false
 
   if (!name || name.length < 2) {
     return c.json({ error: 'Name must be at least 2 characters' }, 400)
@@ -52,43 +121,55 @@ export async function register(c: Context) {
   if (password.length < 8) {
     return c.json({ error: 'Password must be at least 8 characters' }, 400)
   }
+  if (!ALLOWED_ROLES.includes(role)) {
+    return c.json({ error: 'Role must be one of: super_admins, affiliate, users, seller' }, 400)
+  }
 
   const id = crypto.randomUUID()
   const passwordHash = bcrypt.hashSync(password, 10)
-  const pool = getPool()
+  const prisma = getPrisma()
 
   try {
-    await pool.execute(
-      'INSERT INTO users (id, email, name, password_hash) VALUES (?, ?, ?, ?)',
-      [id, email, name, passwordHash],
-    )
+    await prisma.user.create({
+      data: {
+        id,
+        email,
+        name,
+        avatar: avatar || null,
+        phone: phone || null,
+        role,
+        isVerified,
+        passwordHash,
+      },
+      select: { id: true },
+    })
   } catch (e: unknown) {
-    const code =
-      e && typeof e === 'object' && 'code' in e
-        ? (e as { code: string }).code
-        : ''
-    if (code === 'ER_DUP_ENTRY') {
+    // Prisma: unique constraint violation
+    if (e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'P2002') {
       return c.json({ error: 'Email already registered' }, 409)
     }
     console.error(e)
     return c.json({ error: 'Registration failed' }, 500)
   }
 
-  const now = Math.floor(Date.now() / 1000)
-  const token = await sign(
-    { sub: id, email, name, iat: now, exp: now + JWT_EXPIRES_SEC },
-    JWT_SECRET,
-  )
+  const { token } = await buildAuthTokenAndUser(c, id)
+  setSessionCookie(c, token)
 
   return c.json({
     token,
-    user: { id, email, name },
+    user: {
+      id,
+      email,
+      name,
+      avatar: avatar || null,
+      phone: phone || null,
+      role,
+      isVerified,
+    },
   })
 }
 
 export async function login(c: Context) {
-  const { JWT_SECRET } = c.get('env')
-
   let body: { email?: string; password?: string }
   try {
     body = await c.req.json()
@@ -103,37 +184,43 @@ export async function login(c: Context) {
     return c.json({ error: 'Invalid email or password' }, 401)
   }
 
-  const pool = getPool()
-  const [rows] = await pool.execute(
-    'SELECT id, email, name, password_hash FROM users WHERE email = ? LIMIT 1',
-    [email],
-  )
-
-  const user = (rows as UserRow[])[0]
+  const prisma = getPrisma()
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      avatar: true,
+      phone: true,
+      role: true,
+      isVerified: true,
+      passwordHash: true,
+    },
+  })
   if (!user) {
     return c.json({ error: 'Invalid email or password' }, 401)
   }
 
-  const ok = bcrypt.compareSync(password, user.password_hash)
+  const ok = bcrypt.compareSync(password, user.passwordHash)
   if (!ok) {
     return c.json({ error: 'Invalid email or password' }, 401)
   }
 
-  const now = Math.floor(Date.now() / 1000)
-  const token = await sign(
-    {
-      sub: user.id,
-      email: user.email,
-      name: user.name,
-      iat: now,
-      exp: now + JWT_EXPIRES_SEC,
-    },
-    JWT_SECRET,
-  )
+  const { token } = await buildAuthTokenAndUser(c, user.id)
+  setSessionCookie(c, token)
 
   return c.json({
     token,
-    user: rowToUser(user),
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      phone: user.phone,
+      role: user.role,
+      isVerified: user.isVerified,
+    },
   })
 }
 
@@ -143,16 +230,27 @@ export async function me(c: Context) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  const pool = getPool()
-  const [rows] = await pool.execute(
-    'SELECT id, email, name, password_hash FROM users WHERE id = ? LIMIT 1',
-    [userId],
-  )
-
-  const user = (rows as UserRow[])[0]
+  const prisma = getPrisma()
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      avatar: true,
+      phone: true,
+      role: true,
+      isVerified: true,
+    },
+  })
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  return c.json({ user: rowToUser(user) })
+  return c.json({ user })
+}
+
+export async function logout(c: Context) {
+  deleteCookie(c, SESSION_COOKIE, { path: '/' })
+  return c.json({ ok: true })
 }

@@ -1,10 +1,23 @@
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 
-import { ArrowRight, Check, Diamond, Eye, Lock, Mail } from 'lucide-react'
-import { useState } from 'react'
+import {
+  ArrowRight,
+  Check,
+  Diamond,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  QrCode,
+} from 'lucide-react'
 
-import { useAuth } from '../../context/AuthContext'
-import { ApiError } from '../../lib/api'
+import { useEffect, useMemo, useState } from 'react'
+
+import { useAuth } from '#/context/AuthContext'
+
+import { API_PATHS, ApiError, apiJson } from '#/lib/config'
+
+import { loginSchema } from '#/lib/validations'
 
 export const Route = createFileRoute('/(auth)/login')({
   component: LoginPage,
@@ -12,18 +25,29 @@ export const Route = createFileRoute('/(auth)/login')({
 
 function LoginPage() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, loginWithQr } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loginMode, setLoginMode] = useState<'email' | 'qr'>('email')
+  const [qrLoading, setQrLoading] = useState(false)
+  const [qrToken, setQrToken] = useState<string | null>(null)
+  const [qrStatus, setQrStatus] = useState<'idle' | 'pending' | 'approved' | 'expired'>('idle')
+  const [qrExpiresAt, setQrExpiresAt] = useState<number | null>(null)
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    const parsed = loginSchema.safeParse({ email, password })
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'Data login tidak valid')
+      return
+    }
     setLoading(true)
     try {
-      await login(email.trim(), password)
+      await login(parsed.data.email, parsed.data.password)
       await navigate({ to: '/' })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Login gagal')
@@ -31,6 +55,76 @@ function LoginPage() {
       setLoading(false)
     }
   }
+
+  async function startQrLogin() {
+    setError(null)
+    setQrLoading(true)
+    try {
+      const res = await apiJson<{ qrToken: string; expiresAt: number }>(API_PATHS.qr.init, {
+        method: 'POST',
+      })
+      setQrToken(res.qrToken)
+      setQrExpiresAt(res.expiresAt)
+      setQrStatus('pending')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Gagal membuat QR login')
+      setQrStatus('idle')
+    } finally {
+      setQrLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (loginMode !== 'qr') return
+    if (!qrToken || qrStatus !== 'pending') return
+    const timer = window.setInterval(async () => {
+      try {
+        const res = await apiJson<{
+          status: 'pending' | 'approved' | 'expired' | 'used'
+          expiresAt?: number
+          token?: string
+          user?: { id: string; email: string; name: string }
+        }>(API_PATHS.qr.status(qrToken))
+        if (res.status === 'pending') {
+          if (typeof res.expiresAt === 'number') setQrExpiresAt(res.expiresAt)
+          return
+        }
+        if (res.status === 'approved' && res.user) {
+          setQrStatus('approved')
+          loginWithQr({ user: res.user, token: res.token ?? null })
+          void navigate({ to: '/' })
+          return
+        }
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 410 || err.status === 404)) {
+          setQrStatus('expired')
+          return
+        }
+        setError(err instanceof ApiError ? err.message : 'Gagal memeriksa status QR')
+      }
+    }, 2000)
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [loginMode, qrToken, qrStatus, loginWithQr, navigate])
+
+  useEffect(() => {
+    if (loginMode !== 'qr') return
+    if (qrToken || qrLoading) return
+    void startQrLogin()
+  }, [loginMode, qrToken, qrLoading])
+
+  const qrImageUrl = useMemo(() => {
+    if (!qrToken) return null
+    const encoded = encodeURIComponent(qrToken)
+    return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encoded}`
+  }, [qrToken])
+
+  const qrCountdown = useMemo(() => {
+    if (!qrExpiresAt) return null
+    const seconds = Math.max(0, Math.floor((qrExpiresAt - Date.now()) / 1000))
+    return seconds
+  }, [qrExpiresAt, qrStatus])
 
   return (
     <div className="flex min-h-screen items-stretch overflow-hidden bg-background text-foreground">
@@ -83,6 +177,37 @@ function LoginPage() {
             </p>
           </div>
 
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode('email')
+                setError(null)
+              }}
+              className={`rounded-xl px-4 py-3 text-[10px] font-black tracking-widest uppercase transition-colors ${
+                loginMode === 'email'
+                  ? 'bg-[#d4ff3f] text-black'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode('qr')
+                setError(null)
+              }}
+              className={`rounded-xl px-4 py-3 text-[10px] font-black tracking-widest uppercase transition-colors ${
+                loginMode === 'qr'
+                  ? 'bg-[#d4ff3f] text-black'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Login with QR
+            </button>
+          </div>
+
           <form className="space-y-8" onSubmit={onSubmit}>
             {error ? (
               <p
@@ -92,116 +217,185 @@ function LoginPage() {
                 {error}
               </p>
             ) : null}
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label
-                  htmlFor="email"
-                  className="ml-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase"
-                >
-                  Email Address
+            {loginMode === 'email' ? (
+              <>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="email"
+                      className="ml-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase"
+                    >
+                      Email Address
+                    </label>
+                    <div className="group relative">
+                      <div className="absolute inset-y-0 left-5 flex items-center text-muted-foreground transition-colors group-focus-within:text-[#d4ff3f]">
+                        <Mail className="h-5 w-5" />
+                      </div>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        autoComplete="email"
+                        required
+                        value={email}
+                        onChange={(ev) => setEmail(ev.target.value)}
+                        placeholder="name@luxe.com"
+                        className="w-full rounded-2xl border border-border bg-muted py-5 pr-6 pl-14 text-sm font-bold text-foreground placeholder:text-muted-foreground focus:border-[#d4ff3f] focus:ring-1 focus:ring-[#d4ff3f] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="password"
+                        className="ml-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase"
+                      >
+                        Password
+                      </label>
+                      <a
+                        href="#"
+                        className="text-[10px] font-black tracking-widest text-[#d4ff3f] uppercase hover:underline"
+                      >
+                        Forgot Password?
+                      </a>
+                    </div>
+                    <div className="group relative">
+                      <div className="absolute inset-y-0 left-5 flex items-center text-muted-foreground transition-colors group-focus-within:text-[#d4ff3f]">
+                        <Lock className="h-5 w-5" />
+                      </div>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        id="password"
+                        name="password"
+                        autoComplete="current-password"
+                        required
+                        value={password}
+                        onChange={(ev) => setPassword(ev.target.value)}
+                        placeholder="••••••••"
+                        className="w-full rounded-2xl border border-border bg-muted py-5 pr-14 pl-14 text-sm font-bold text-foreground placeholder:text-muted-foreground focus:border-[#d4ff3f] focus:ring-1 focus:ring-[#d4ff3f] focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={
+                          showPassword
+                            ? 'Sembunyikan password'
+                            : 'Tampilkan password'
+                        }
+                        className="absolute inset-y-0 right-5 flex items-center text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <label className="ml-1 flex cursor-pointer items-center gap-3">
+                  <input type="checkbox" className="peer sr-only" />
+                  <div className="flex h-5 w-5 items-center justify-center rounded border border-border bg-muted transition-all peer-checked:border-[#d4ff3f] peer-checked:bg-[#d4ff3f]">
+                    <Check className="h-3 w-3 text-black opacity-0 peer-checked:opacity-100" />
+                  </div>
+                  <span className="text-xs font-bold text-muted-foreground">
+                    Keep me signed in
+                  </span>
                 </label>
-                <div className="group relative">
-                  <div className="absolute inset-y-0 left-5 flex items-center text-muted-foreground transition-colors group-focus-within:text-[#d4ff3f]">
-                    <Mail className="h-5 w-5" />
-                  </div>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(ev) => setEmail(ev.target.value)}
-                    placeholder="name@luxe.com"
-                    className="w-full rounded-2xl border border-border bg-muted py-5 pr-6 pl-14 text-sm font-bold text-foreground placeholder:text-muted-foreground focus:border-[#d4ff3f] focus:ring-1 focus:ring-[#d4ff3f] focus:outline-none"
-                  />
+              </>
+            ) : (
+              <div className="space-y-5 rounded-2xl border border-border bg-muted p-6">
+                <div className="flex items-center gap-3">
+                  <QrCode className="h-5 w-5 text-[#d4ff3f]" />
+                  <p className="text-xs font-black tracking-widest text-muted-foreground uppercase">
+                    Scan QR dari aplikasi yang sudah login
+                  </p>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="password"
-                    className="ml-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase"
-                  >
-                    Password
-                  </label>
-                  <a
-                    href="#"
-                    className="text-[10px] font-black tracking-widest text-[#d4ff3f] uppercase hover:underline"
-                  >
-                    Forgot Password?
-                  </a>
+                <div className="flex justify-center">
+                  {qrImageUrl ? (
+                    <img
+                      src={qrImageUrl}
+                      alt="QR login"
+                      className="h-60 w-60 rounded-xl border border-border bg-white p-2"
+                    />
+                  ) : (
+                    <div className="flex h-60 w-60 items-center justify-center rounded-xl border border-border text-sm text-muted-foreground">
+                      {qrLoading ? 'Membuat QR...' : 'QR belum tersedia'}
+                    </div>
+                  )}
                 </div>
-                <div className="group relative">
-                  <div className="absolute inset-y-0 left-5 flex items-center text-muted-foreground transition-colors group-focus-within:text-[#d4ff3f]">
-                    <Lock className="h-5 w-5" />
-                  </div>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(ev) => setPassword(ev.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-2xl border border-border bg-muted py-5 pr-14 pl-14 text-sm font-bold text-foreground placeholder:text-muted-foreground focus:border-[#d4ff3f] focus:ring-1 focus:ring-[#d4ff3f] focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-5 flex items-center text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <Eye className="h-5 w-5" />
-                  </button>
+                <div className="space-y-2 text-center">
+                  <p className="text-xs font-bold text-muted-foreground">
+                    Status:{' '}
+                    <span className="text-foreground">
+                      {qrStatus === 'pending' ? 'Menunggu scan' : qrStatus}
+                    </span>
+                  </p>
+                  {typeof qrCountdown === 'number' && qrStatus === 'pending' ? (
+                    <p className="text-xs font-bold text-muted-foreground">
+                      Kedaluwarsa dalam {qrCountdown} detik
+                    </p>
+                  ) : null}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQrToken(null)
+                    setQrExpiresAt(null)
+                    setQrStatus('idle')
+                    void startQrLogin()
+                  }}
+                  disabled={qrLoading}
+                  className="w-full rounded-xl border border-border py-3 text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-background disabled:opacity-60"
+                >
+                  {qrLoading ? 'Memuat...' : 'Refresh QR'}
+                </button>
               </div>
-            </div>
-
-            <label className="ml-1 flex cursor-pointer items-center gap-3">
-              <input type="checkbox" className="peer sr-only" />
-              <div className="flex h-5 w-5 items-center justify-center rounded border border-border bg-muted transition-all peer-checked:border-[#d4ff3f] peer-checked:bg-[#d4ff3f]">
-                <Check className="h-3 w-3 text-black opacity-0 peer-checked:opacity-100" />
-              </div>
-              <span className="text-xs font-bold text-muted-foreground">
-                Keep me signed in
-              </span>
-            </label>
+            )}
 
             <div className="space-y-6">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-2xl bg-[#d4ff3f] py-5 text-xs font-black tracking-widest text-black uppercase transition-all duration-300 hover:bg-[#e5ff80] hover:shadow-[0_0_35px_rgba(212,255,63,0.4)] disabled:opacity-60"
-              >
-                <span className="inline-flex items-center gap-3">
-                  {loading ? 'Memproses…' : 'Sign In to LUXE'}
-                  <ArrowRight className="h-4 w-4" />
-                </span>
-              </button>
-
-              <div className="flex items-center gap-4 py-2">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                  Or continue with
-                </span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              {loginMode === 'email' ? (
                 <button
-                  type="button"
-                  className="rounded-xl border border-border bg-muted py-4 text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-muted/80"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-2xl bg-[#d4ff3f] py-5 text-xs font-black tracking-widest text-black uppercase transition-all duration-300 hover:bg-[#e5ff80] hover:shadow-[0_0_35px_rgba(212,255,63,0.4)] disabled:opacity-60"
                 >
-                  Google
+                  <span className="inline-flex items-center gap-3">
+                    {loading ? 'Memproses…' : 'Sign In to LUXE'}
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
                 </button>
-                <button
-                  type="button"
-                  className="rounded-xl border border-border bg-muted py-4 text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-muted/80"
-                >
-                  Apple
-                </button>
-              </div>
+              ) : (
+                <div className="rounded-2xl border border-[#d4ff3f]/40 bg-[#d4ff3f]/10 px-4 py-3 text-xs font-bold text-muted-foreground">
+                  Setelah scan dari HP, login web akan otomatis berhasil.
+                </div>
+              )}
+              {loginMode === 'email' ? (
+                <>
+                  <div className="flex items-center gap-4 py-2">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                      Or continue with
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      className="rounded-xl border border-border bg-muted py-4 text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-muted/80"
+                    >
+                      Google
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-xl border border-border bg-muted py-4 text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-muted/80"
+                    >
+                      Apple
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </div>
           </form>
 

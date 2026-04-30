@@ -1,25 +1,22 @@
-import mysql from 'mysql2/promise'
-
 import type { AppEnv } from '../env.js'
 
-let pool: mysql.Pool | null = null
+import { PrismaClient } from '@prisma/client'
+
+let prisma: PrismaClient | null = null
 
 export function initDb(env: AppEnv): void {
-  if (pool) return
-  pool = mysql.createPool({
-    host: env.MYSQL_HOST,
-    port: env.MYSQL_PORT,
-    user: env.MYSQL_USER,
-    password: env.MYSQL_PASSWORD,
-    database: env.MYSQL_DATABASE,
-    waitForConnections: true,
-    connectionLimit: 10,
-  })
+  if (prisma) return
+  // `loadEnv()` sudah memastikan `process.env.DATABASE_URL` terpasang.
+  // Ini hanya validasi tambahan agar error lebih jelas.
+  if (!env.DATABASE_URL) {
+    throw new Error('DATABASE_URL tidak ter-set. Isi di .env atau set MYSQL_* untuk auto-build.')
+  }
+  prisma = new PrismaClient()
 }
 
-export function getPool(): mysql.Pool {
-  if (!pool) {
+export function getPrisma(): PrismaClient {
+  if (!prisma) {
     throw new Error('Database belum di-init — panggil initDb(env) di server.ts')
   }
-  return pool
+  return prisma
 }

@@ -1,38 +1,52 @@
 # wecommerce API (Hono)
 
-## Auth + MySQL (development)
+## Auth + MySQL + Prisma (development)
 
-1. Buat database dan tabel:
+### 1) Siapkan MySQL lokal (phpMyAdmin / XAMPP / Laragon)
 
-   ```bash
-   mysql -u root -p < schema.sql
-   ```
+- Pastikan MySQL jalan di `127.0.0.1:3306`
+- Buat database `wecommerce` (bisa dari phpMyAdmin)
 
-2. Salin env, lalu isi `JWT_SECRET` (minimal 16 karakter):
+### 2) Setup env
 
-   ```bash
-   cp .env.example .env
-   ```
+Salin env, lalu isi `JWT_SECRET` (minimal 16 karakter):
 
-   (Di **CMD Windows**: `copy .env.example .env`)
+```bash
+cp .env.example .env
+```
 
-   Di **CMD** atau **PowerShell** (folder apa saja, asal Node terpasang), jalankan:
+(Di **CMD Windows**: `copy .env.example .env`)
 
-   ```bat
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-   ```
+Isi `DATABASE_URL` di `.env` (disarankan). Contoh:
 
-   Salin output ke baris `JWT_SECRET=` di `.env`.
+```env
+DATABASE_URL="mysql://root:@127.0.0.1:3306/wecommerce"
+```
 
-3. Install & jalankan server Node (MySQL harus sudah jalan):
+Kalau tidak diisi, `DATABASE_URL` akan otomatis dibangun dari variabel `MYSQL_*`.
 
-   ```bash
-   pnpm install
-   pnpm dev
-   ```
+Generate secret:
 
-   API: `http://localhost:8787`  
-   Endpoint auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` (header `Authorization: Bearer <token>`).
+Di **CMD** atau **PowerShell** (folder apa saja, asal Node terpasang), jalankan:
+
+```bat
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Salin output ke baris `JWT_SECRET=` di `.env`.
+
+### 3) Install dependencies + migrate schema (Prisma)
+
+```bash
+pnpm install
+pnpm prisma:migrate -- --name init
+pnpm prisma:generate
+pnpm prisma db push
+pnpm dev
+```
+
+API: `http://localhost:8787`  
+ Endpoint auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` (header `Authorization: Bearer <token>`).
 
 ## Cloudflare Worker (`pnpm dev:cf`)
 

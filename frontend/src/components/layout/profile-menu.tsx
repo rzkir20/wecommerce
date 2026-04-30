@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 
-import { ChevronDown, KeyRound, LogOut } from 'lucide-react'
+import { ChevronDown, LogOut, User } from 'lucide-react'
 
 import { DropdownMenu } from 'radix-ui'
 
@@ -53,11 +53,11 @@ export function ProfileMenu({
           </div>
           <DropdownMenu.Item asChild>
             <Link
-              to="/change-password"
+              to="/profile"
               className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-foreground outline-none select-none hover:bg-muted hover:text-[#d4ff3f] data-highlighted:bg-muted data-highlighted:text-[#d4ff3f]"
             >
-              <KeyRound className="h-4 w-4 shrink-0" aria-hidden />
-              Ubah kata sandi
+              <User className="h-4 w-4 shrink-0" aria-hidden />
+              Profile
             </Link>
           </DropdownMenu.Item>
           <DropdownMenu.Separator className="my-1 h-px bg-white/10" />

@@ -1,5 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ArrowLeft, CheckCircle, Circle, EyeOff, ShieldCheck } from 'lucide-react'
+import {
+  ArrowLeft,
+  CheckCircle,
+  Circle,
+  EyeOff,
+  ShieldCheck,
+} from 'lucide-react'
 
 export const Route = createFileRoute('/(auth)/change-password')({
   component: ChangePasswordPage,
@@ -7,7 +13,7 @@ export const Route = createFileRoute('/(auth)/change-password')({
 
 function ChangePasswordPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background bg-[radial-gradient(circle_at_70%_30%,rgba(212,255,63,0.08)_0%,transparent_50%),radial-gradient(circle_at_10%_90%,rgba(212,255,63,0.03)_0%,transparent_40%)] p-8 pt-32 text-foreground md:pt-40 lg:p-12 lg:pt-40">
+    <div className="flex min-h-screen items-center justify-center bg-background bg-[radial-gradient(circle_at_70%_30%,rgba(212,255,63,0.08)_0%,transparent_50%),radial-gradient(circle_at_10%_90%,rgba(212,255,63,0.03)_0%,transparent_40%)] py-4 text-foreground">
       <div className="w-full max-w-xl">
         <div className="mb-12">
           <a
@@ -22,8 +28,8 @@ function ChangePasswordPage() {
             <span className="text-[#d4ff3f]">Heritage.</span>
           </h1>
           <p className="max-w-md text-sm text-muted-foreground">
-            Update your password regularly to maintain the security of your LUXE account and
-            private collections.
+            Update your password regularly to maintain the security of your LUXE
+            account and private collections.
           </p>
         </div>
 
@@ -88,19 +94,27 @@ function ChangePasswordPage() {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-[#d4ff3f]" />
-                  <span className="text-[11px] text-foreground/80">At least 8 characters</span>
+                  <span className="text-[11px] text-foreground/80">
+                    At least 8 characters
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-[#d4ff3f]" />
-                  <span className="text-[11px] text-foreground/80">One uppercase letter</span>
+                  <span className="text-[11px] text-foreground/80">
+                    One uppercase letter
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Circle className="h-4 w-4 text-muted-foreground/60" />
-                  <span className="text-[11px] text-muted-foreground">One numeric digit</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    One numeric digit
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Circle className="h-4 w-4 text-muted-foreground/60" />
-                  <span className="text-[11px] text-muted-foreground">One special character</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    One special character
+                  </span>
                 </div>
               </div>
             </div>

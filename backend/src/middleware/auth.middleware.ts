@@ -1,11 +1,16 @@
 import type { MiddlewareHandler } from 'hono'
+
+import { getCookie } from 'hono/cookie'
+
 import { verify } from 'hono/jwt'
 
-/** Wajib header `Authorization: Bearer <jwt>`. Set `jwtUserId` di context. */
+/** Auth via cookie session (`session`) dengan fallback Bearer token. */
 export const requireAuth: MiddlewareHandler = async (c, next) => {
+  const cookieToken = getCookie(c, 'session')
   const header = c.req.header('Authorization')
+  const bearerToken = header?.startsWith('Bearer ') ? header.slice(7) : null
+  const raw = cookieToken ?? bearerToken
 
-  const raw = header?.startsWith('Bearer ') ? header.slice(7) : null
   if (!raw) {
     return c.json({ error: 'Unauthorized' }, 401)
   }

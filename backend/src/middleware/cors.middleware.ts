@@ -20,6 +20,7 @@ export function corsMiddleware(env: AppEnv) {
     },
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
     maxAge: 86400,
   })
 }

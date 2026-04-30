@@ -39,6 +39,7 @@ const megaNav = (dashboardData as { megaNav?: MegaNavItem[] }).megaNav ?? []
 type HeaderProps = {
   activeItem: string
   cartCount: number
+  isAuthReady: boolean
   isLoggedIn: boolean
   userName: string
   userAvatar: string
@@ -49,6 +50,7 @@ type HeaderProps = {
 export function Header({
   activeItem,
   cartCount,
+  isAuthReady,
   isLoggedIn,
   userName,
   userAvatar,
@@ -77,7 +79,7 @@ export function Header({
     ].join(' ')
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+    <header className="fixed top-0 right-0 left-0 z-40 bg-background/95 backdrop-blur-md">
       <div className="relative w-full">
         {/* Row 1 — Zalora-style: logo | search | account / wishlist / bag */}
         <div className="container mx-auto flex items-center gap-2 px-4 py-3 sm:gap-5 sm:px-8 sm:py-6">
@@ -121,7 +123,9 @@ export function Header({
               )}
             </button>
 
-            {isLoggedIn ? (
+            {!isAuthReady ? (
+              <div className="hidden md:inline-flex h-10 w-10 animate-pulse rounded-lg border border-border bg-muted/50 lg:h-11 lg:w-28" />
+            ) : isLoggedIn ? (
               <ProfileMenu
                 userName={userName}
                 userAvatar={userAvatar}
@@ -236,83 +240,85 @@ export function Header({
 
           {/* Full-width mega dropdown — aligned like Zalora (below main bar) */}
           {megaOpenKey && openMegaItem ? (
-          <div className="absolute top-full right-0 left-0 z-100 hidden lg:block">
-            <div className="border-t border-border bg-card shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
-              <div className="container mx-auto grid gap-10 px-8 py-10 lg:grid-cols-[1fr_1fr_1fr_minmax(200px,280px)]">
-                {openMegaItem.columns.map((col) => (
-                  <div key={col.heading}>
-                    <p className="mb-4 text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase">
-                      {col.heading}
-                    </p>
-                    <ul className="space-y-2.5">
-                      {col.links.map((link) => (
-                        <li key={link.label}>
-                          <Link
-                            to={link.href}
-                            className="group flex items-center gap-1 text-sm text-foreground/90 transition-colors hover:text-[#d4ff3f]"
-                            onClick={closeMega}
-                          >
-                            <ChevronRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
-                            {link.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-
-                {openMegaItem.promo ? (
-                  <Link
-                    to={openMegaItem.promo.href}
-                    className="group relative overflow-hidden rounded-2xl border border-border bg-muted"
-                    onClick={closeMega}
-                  >
-                    <img
-                      src={openMegaItem.promo.image}
-                      alt=""
-                      className="aspect-4/5 w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent" />
-                    <div className="absolute right-0 bottom-0 left-0 p-5">
-                      <p className="text-[10px] font-black tracking-widest text-[#d4ff3f] uppercase">
-                        Featured
+            <div className="absolute top-full right-0 left-0 z-100 hidden lg:block">
+              <div className="border-t border-border bg-card shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+                <div className="container mx-auto grid gap-10 px-8 py-10 lg:grid-cols-[1fr_1fr_1fr_minmax(200px,280px)]">
+                  {openMegaItem.columns.map((col) => (
+                    <div key={col.heading}>
+                      <p className="mb-4 text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase">
+                        {col.heading}
                       </p>
-                      <p className="mt-1 font-black text-foreground">
-                        {openMegaItem.promo.title}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {openMegaItem.promo.subtitle}
-                      </p>
+                      <ul className="space-y-2.5">
+                        {col.links.map((link) => (
+                          <li key={link.label}>
+                            <Link
+                              to={link.href}
+                              className="group flex items-center gap-1 text-sm text-foreground/90 transition-colors hover:text-[#d4ff3f]"
+                              onClick={closeMega}
+                            >
+                              <ChevronRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                              {link.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </Link>
-                ) : null}
+                  ))}
 
-                <div className="flex flex-col justify-center border-t border-border pt-6 lg:col-span-full lg:flex-row lg:items-center lg:justify-between lg:border-t lg:pt-6">
-                  <p className="text-xs text-muted-foreground">
-                    {isProducts
-                      ? 'You are browsing watches.'
-                      : 'Explore the full catalogue.'}
-                  </p>
-                  <Link
-                    to={openMegaItem.href}
-                    className="mt-3 inline-flex items-center gap-2 text-xs font-black tracking-widest text-[#d4ff3f] uppercase lg:mt-0"
-                    onClick={closeMega}
-                  >
-                    Shop all in this category
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
+                  {openMegaItem.promo ? (
+                    <Link
+                      to={openMegaItem.promo.href}
+                      className="group relative overflow-hidden rounded-2xl border border-border bg-muted"
+                      onClick={closeMega}
+                    >
+                      <img
+                        src={openMegaItem.promo.image}
+                        alt=""
+                        className="aspect-4/5 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent" />
+                      <div className="absolute right-0 bottom-0 left-0 p-5">
+                        <p className="text-[10px] font-black tracking-widest text-[#d4ff3f] uppercase">
+                          Featured
+                        </p>
+                        <p className="mt-1 font-black text-foreground">
+                          {openMegaItem.promo.title}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {openMegaItem.promo.subtitle}
+                        </p>
+                      </div>
+                    </Link>
+                  ) : null}
+
+                  <div className="flex flex-col justify-center border-t border-border pt-6 lg:col-span-full lg:flex-row lg:items-center lg:justify-between lg:border-t lg:pt-6">
+                    <p className="text-xs text-muted-foreground">
+                      {isProducts
+                        ? 'You are browsing watches.'
+                        : 'Explore the full catalogue.'}
+                    </p>
+                    <Link
+                      to={openMegaItem.href}
+                      className="mt-3 inline-flex items-center gap-2 text-xs font-black tracking-widest text-[#d4ff3f] uppercase lg:mt-0"
+                      onClick={closeMega}
+                    >
+                      Shop all in this category
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
         </div>
 
         {/* Mobile / tablet drawer */}
         {mobileDrawerOpen ? (
           <div className="border-t border-border bg-card lg:hidden">
             <nav className="container mx-auto max-h-[min(70vh,calc(100dvh-5rem))] space-y-1 overflow-y-auto px-4 py-4">
-              {isLoggedIn ? (
+              {!isAuthReady ? (
+                <div className="mb-3 h-17 animate-pulse rounded-xl border border-border bg-muted/50" />
+              ) : isLoggedIn ? (
                 <div className="mb-3 flex items-center gap-3 rounded-xl border border-border bg-muted/50 px-4 py-3">
                   <img
                     src={userAvatar}

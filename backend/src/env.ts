@@ -8,6 +8,11 @@ const schema = z.object({
   JWT_SECRET: z
     .string()
     .min(16, 'JWT_SECRET harus minimal 16 karakter (lihat .env.example)'),
+  /**
+   * Prisma pakai `DATABASE_URL`. Kalau kosong, akan di-build dari variabel MYSQL_*.
+   * (Tetap disediakan supaya kompatibel dengan setup lama.)
+   */
+  DATABASE_URL: z.string().optional(),
   MYSQL_HOST: z.string().default('127.0.0.1'),
   MYSQL_PORT: z.coerce.number().default(3306),
   MYSQL_USER: z.string().default('root'),
@@ -25,5 +30,14 @@ export function loadEnv(): AppEnv {
     console.error('Env tidak valid:', parsed.error.flatten().fieldErrors)
     process.exit(1)
   }
-  return parsed.data
+  const env = parsed.data
+  if (!env.DATABASE_URL) {
+    const user = encodeURIComponent(env.MYSQL_USER)
+    const pass = encodeURIComponent(env.MYSQL_PASSWORD)
+    const auth = env.MYSQL_PASSWORD ? `${user}:${pass}` : `${user}:`
+    env.DATABASE_URL = `mysql://${auth}@${env.MYSQL_HOST}:${env.MYSQL_PORT}/${env.MYSQL_DATABASE}`
+  }
+  // Prisma client membaca dari `process.env.DATABASE_URL`
+  process.env.DATABASE_URL = env.DATABASE_URL
+  return env
 }

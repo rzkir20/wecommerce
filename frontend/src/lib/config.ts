@@ -1,6 +1,20 @@
 export function getApiUrl(): string {
-  return import.meta.env.VITE_API_URL ?? 'http://localhost:8787'
+  return import.meta.env.VITE_API_URL ?? process.env.VITE_API_URL ?? 'http://localhost:8787'
 }
+
+export const API_PATHS = {
+  auth: {
+    login: '/api/auth/login',
+    register: '/api/auth/register',
+    me: '/api/auth/me',
+    logout: '/api/auth/logout',
+  },
+  qr: {
+    init: '/api/qr/init',
+    scan: '/api/qr/scan',
+    status: (qrToken: string) => `/api/qr/status/${encodeURIComponent(qrToken)}`,
+  },
+} as const
 
 export class ApiError extends Error {
   constructor(
@@ -27,7 +41,11 @@ export async function apiJson<T>(
   }
 
   const { token: _t, ...rest } = init ?? {}
-  const res = await fetch(url, { ...rest, headers })
+  const res = await fetch(url, {
+    ...rest,
+    headers,
+    credentials: rest.credentials ?? 'include',
+  })
 
   const text = await res.text()
   let data: unknown = {}
@@ -44,7 +62,7 @@ export async function apiJson<T>(
       typeof data === 'object' &&
       data !== null &&
       'error' in data &&
-      typeof (data as { error: unknown }).error === 'string'
+      typeof data.error === 'string'
         ? (data as { error: string }).error
         : res.statusText || 'Request failed'
     throw new ApiError(res.status, msg)

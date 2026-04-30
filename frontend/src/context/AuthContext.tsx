@@ -7,9 +7,7 @@ import {
   useState,
 } from 'react'
 
-import { apiJson } from '../lib/api'
-
-const TOKEN_KEY = 'wecommerce_token'
+import { API_PATHS, apiJson } from '../lib/config'
 
 const USER_KEY = 'wecommerce_user'
 
@@ -17,6 +15,11 @@ export type AuthUser = {
   id: string
   email: string
   name: string
+}
+
+type AuthProviderProps = {
+  children: React.ReactNode
+  initialUser?: AuthUser | null
 }
 
 type AuthState = {
@@ -27,6 +30,7 @@ type AuthState = {
 
 type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<void>
+  loginWithQr: (payload: { user: AuthUser; token?: string | null }) => void
   register: (name: string, email: string, password: string) => Promise<void>
   logout: () => void
 }
@@ -49,50 +53,51 @@ export function avatarUrlForEmail(email: string): string {
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
+export function AuthProvider({
+  children,
+  initialUser,
+}: AuthProviderProps) {
+  const hasInitialState = initialUser !== undefined
+  const [user, setUser] = useState<AuthUser | null>(initialUser ?? null)
   const [token, setToken] = useState<string | null>(null)
-  const [ready, setReady] = useState(false)
+  const [ready, setReady] = useState(hasInitialState)
 
-  const persist = useCallback((nextToken: string, nextUser: AuthUser) => {
-    localStorage.setItem(TOKEN_KEY, nextToken)
+  const persist = useCallback((nextUser: AuthUser, nextToken: string | null = null) => {
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser))
     setToken(nextToken)
     setUser(nextUser)
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY)
+    void apiJson<{ ok: boolean }>(API_PATHS.auth.logout, { method: 'POST' }).catch(() => {
+      // Tetap clear local state walau request logout gagal.
+    })
     localStorage.removeItem(USER_KEY)
     setToken(null)
     setUser(null)
   }, [])
 
   useEffect(() => {
+    if (ready) return
     let cancelled = false
     const run = async () => {
-      const t = localStorage.getItem(TOKEN_KEY)
       const u = readStoredUser()
-      if (!t || !u) {
+      if (!u) {
         if (!cancelled) {
           setUser(null)
           setToken(null)
           setReady(true)
         }
-        return
       }
       try {
-        const res = await apiJson<{ user: AuthUser }>('/api/auth/me', {
-          token: t,
-        })
+        const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.me)
         if (!cancelled) {
-          setToken(t)
+          setToken(null)
           setUser(res.user)
           localStorage.setItem(USER_KEY, JSON.stringify(res.user))
         }
       } catch {
         if (!cancelled) {
-          localStorage.removeItem(TOKEN_KEY)
           localStorage.removeItem(USER_KEY)
           setToken(null)
           setUser(null)
@@ -105,32 +110,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [ready])
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const res = await apiJson<{ token: string; user: AuthUser }>(
-        '/api/auth/login',
+      const res = await apiJson<{ token?: string; user: AuthUser }>(
+        API_PATHS.auth.login,
         {
           method: 'POST',
           body: JSON.stringify({ email, password }),
         },
       )
-      persist(res.token, res.user)
+      persist(res.user, res.token ?? null)
+    },
+    [persist],
+  )
+
+  const loginWithQr = useCallback(
+    (payload: { user: AuthUser; token?: string | null }) => {
+      persist(payload.user, payload.token ?? null)
     },
     [persist],
   )
 
   const register = useCallback(
     async (name: string, email: string, password: string) => {
-      const res = await apiJson<{ token: string; user: AuthUser }>(
-        '/api/auth/register',
+      const res = await apiJson<{ token?: string; user: AuthUser }>(
+        API_PATHS.auth.register,
         {
           method: 'POST',
           body: JSON.stringify({ name, email, password }),
         },
       )
-      persist(res.token, res.user)
+      persist(res.user, res.token ?? null)
     },
     [persist],
   )
@@ -141,10 +153,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       ready,
       login,
+      loginWithQr,
       register,
       logout,
     }),
-    [user, token, ready, login, register, logout],
+    [user, token, ready, login, loginWithQr, register, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

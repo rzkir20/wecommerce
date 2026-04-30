@@ -8,11 +8,11 @@ import {
   Star,
 } from 'lucide-react'
 
-import { ProductCard } from '../components/product-card'
+import { ProductCard } from '#/components/product-card'
 
-import { Card, CardFooter, CardHeader, CardTitle } from '../components/ui/card'
+import { Card, CardFooter, CardHeader, CardTitle } from '#/components/ui/card'
 
-import dashboardData from '../data/data.json'
+import dashboardData from '#/data/data.json'
 
 export const Route = createFileRoute('/')({ component: Home })
 
@@ -21,7 +21,7 @@ function Home() {
 
   return (
     <>
-      <main className="space-y-8 container mx-auto overflow-y-auto p-10 pt-32 md:pt-40">
+      <main className="space-y-8 container mx-auto overflow-y-auto px-4 md:px-8 pt-32 md:pt-48">
         <div className="grid gap-6 lg:grid-cols-3">
           <Card className="gap-0 rounded-[2rem] p-10 lg:col-span-2">
             <div className="flex flex-col items-center gap-10 md:flex-row">

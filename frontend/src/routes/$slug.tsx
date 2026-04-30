@@ -67,7 +67,9 @@ type ProductDetail = {
   }[]
 }
 
-const productDetails = dashboardData.productDetails as ProductDetailsMap | undefined
+const productDetails = dashboardData.productDetails as
+  | ProductDetailsMap
+  | undefined
 
 export const Route = createFileRoute('/$slug')({
   head: ({ params }) => {
@@ -93,11 +95,14 @@ function RouteComponent() {
 function ProductDetailPage({ product }: { product: ProductDetail }) {
   const { addItem, openCart } = useCart()
   const [mainSrc, setMainSrc] = useState(
-    () => product.gallery.find((g): g is GalleryImage => g.type === 'image')?.src ?? '',
+    () =>
+      product.gallery.find((g): g is GalleryImage => g.type === 'image')?.src ??
+      '',
   )
   const [strapId, setStrapId] = useState(
     () =>
-      (product.strapColors.find((s) => s.selected) ?? product.strapColors[0]).id,
+      (product.strapColors.find((s) => s.selected) ?? product.strapColors[0])
+        .id,
   )
   const [qty, setQty] = useState(1)
   const [wishlisted, setWishlisted] = useState(false)
@@ -118,7 +123,7 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
 
   return (
     <>
-      <main className="custom-scrollbar flex-1 space-y-12 overflow-y-auto p-10 pt-32 md:pt-40">
+      <main className="custom-scrollbar flex-1 space-y-12 overflow-y-auto container mx-auto px-4 md:px-8 pt-32 md:pt-40">
         <div className="grid gap-12 lg:grid-cols-2">
           <div className="space-y-6">
             <div className="glass-panel relative flex aspect-square items-center justify-center overflow-hidden rounded-[2.5rem] p-12">
@@ -144,7 +149,11 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
                         : 'hover:bg-muted',
                     ].join(' ')}
                   >
-                    <img src={item.thumb} alt={item.alt} className="h-auto w-full" />
+                    <img
+                      src={item.thumb}
+                      alt={item.alt}
+                      className="h-auto w-full"
+                    />
                   </button>
                 ) : (
                   <button
@@ -172,12 +181,16 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
                       key={i}
                       className={[
                         'h-3.5 w-3.5',
-                        i < product.rating ? 'fill-[#d4ff3f] text-[#d4ff3f]' : 'text-muted-foreground/80',
+                        i < product.rating
+                          ? 'fill-[#d4ff3f] text-[#d4ff3f]'
+                          : 'text-muted-foreground/80',
                       ].join(' ')}
                     />
                   ))}
                 </div>
-                <span className="text-xs text-muted-foreground">{product.reviewCountLabel}</span>
+                <span className="text-xs text-muted-foreground">
+                  {product.reviewCountLabel}
+                </span>
               </div>
               <h1 className="text-4xl leading-none font-black tracking-tighter uppercase md:text-5xl">
                 {product.shortTitle} <br />
@@ -194,7 +207,9 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
               </span>
             </div>
 
-            <p className="leading-relaxed text-muted-foreground">{product.description}</p>
+            <p className="leading-relaxed text-muted-foreground">
+              {product.description}
+            </p>
 
             <div className="grid grid-cols-2 gap-4">
               {product.specs.map((spec) => (
@@ -209,7 +224,9 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
 
             <div className="space-y-6">
               <div className="space-y-3">
-                <p className="text-xs font-black tracking-widest uppercase">Select Strap Color</p>
+                <p className="text-xs font-black tracking-widest uppercase">
+                  Select Strap Color
+                </p>
                 <div className="flex gap-3">
                   {product.strapColors.map((strap) => (
                     <button
@@ -235,7 +252,9 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
 
               <div className="flex items-center gap-6">
                 <div className="space-y-3">
-                  <p className="text-xs font-black tracking-widest uppercase">Quantity</p>
+                  <p className="text-xs font-black tracking-widest uppercase">
+                    Quantity
+                  </p>
                   <div className="flex items-center gap-4 rounded-xl border border-border bg-[#18181b] px-4 py-2">
                     <button
                       type="button"
@@ -278,7 +297,9 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
                     : 'border-border hover:bg-muted',
                 ].join(' ')}
               >
-                <Heart className={`h-5 w-5 ${wishlisted ? 'fill-current' : ''}`} />
+                <Heart
+                  className={`h-5 w-5 ${wishlisted ? 'fill-current' : ''}`}
+                />
               </button>
             </div>
 
@@ -306,7 +327,9 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
               <h2 className="text-2xl font-black tracking-tight uppercase">
                 {product.reviews.heading}
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">{product.reviews.subheading}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {product.reviews.subheading}
+              </p>
             </div>
             <Link
               to={product.reviews.viewAllHref}
@@ -320,7 +343,9 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
           <div className="grid gap-8 lg:grid-cols-4">
             <div className="glass-panel rounded-3xl p-8">
               <div className="space-y-2 text-center">
-                <div className="text-6xl font-black">{product.reviews.summaryScore}</div>
+                <div className="text-6xl font-black">
+                  {product.reviews.summaryScore}
+                </div>
                 <div className="flex justify-center gap-1">
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -341,7 +366,10 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
             </div>
 
             {product.reviews.items.map((rev) => (
-              <div key={rev.author} className="glass-panel space-y-4 rounded-3xl p-6">
+              <div
+                key={rev.author}
+                className="glass-panel space-y-4 rounded-3xl p-6"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <img
@@ -355,14 +383,18 @@ function ProductDetailPage({ product }: { product: ProductDetail }) {
                     {rev.relativeTime}
                   </span>
                 </div>
-                <p className="text-xs leading-relaxed text-muted-foreground italic">&ldquo;{rev.quote}&rdquo;</p>
+                <p className="text-xs leading-relaxed text-muted-foreground italic">
+                  &ldquo;{rev.quote}&rdquo;
+                </p>
               </div>
             ))}
           </div>
         </div>
 
         <div className="space-y-8 pt-12 pb-12">
-          <h2 className="text-xl font-bold tracking-tight uppercase">You May Also Like</h2>
+          <h2 className="text-xl font-bold tracking-tight uppercase">
+            You May Also Like
+          </h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {product.youMayAlsoLike.map((rec) => {
               const card = (

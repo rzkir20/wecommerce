@@ -6,6 +6,10 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 
+import { createServerFn } from '@tanstack/react-start'
+
+import { getRequestHeader } from '@tanstack/react-start/server'
+
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
 import { TanStackDevtools } from '@tanstack/react-devtools'
@@ -23,6 +27,9 @@ import {
   avatarUrlForEmail,
   useAuth,
 } from '../context/AuthContext'
+
+import type { AuthUser } from '../context/AuthContext'
+
 import { CartProvider, useCart } from '../context/CartContext'
 
 import dashboardData from '../data/data.json'
@@ -30,6 +37,26 @@ import dashboardData from '../data/data.json'
 import { ThemeProvider } from '../context/theme-provider'
 
 import appCss from '../styles.css?url'
+
+import { API_PATHS, getApiUrl } from '../lib/config'
+
+const getSessionUser = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<AuthUser | null> => {
+    const cookie = getRequestHeader('cookie') ?? ''
+    if (!cookie) return null
+
+    const res = await fetch(`${getApiUrl()}${API_PATHS.auth.me}`, {
+      headers: {
+        cookie,
+      },
+    })
+
+    if (!res.ok) return null
+
+    const data = (await res.json()) as { user?: AuthUser }
+    return data.user ?? null
+  },
+)
 
 export const Route = createRootRoute({
   head: () => ({
@@ -52,11 +79,16 @@ export const Route = createRootRoute({
       },
     ],
   }),
+  loader: async () => {
+    const initialUser = await getSessionUser()
+    return { initialUser }
+  },
   component: AppLayout,
   shellComponent: RootDocument,
 })
 
 function AppLayout() {
+  const { initialUser } = Route.useLoaderData()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
@@ -64,6 +96,8 @@ function AppLayout() {
     pathname.startsWith('/login') ||
     pathname.startsWith('/register') ||
     pathname.startsWith('/forget-password') ||
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/change-password') ||
     pathname.startsWith('/verifications')
 
   const productSlugs = Object.keys(dashboardData.productDetails)
@@ -83,7 +117,7 @@ function AppLayout() {
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <AuthProvider>
+      <AuthProvider initialUser={initialUser}>
         {isAuthRoute ? (
           <div className="relative min-h-screen">
             <div className="fixed top-4 right-4 z-50 md:top-6 md:right-8">
@@ -107,13 +141,14 @@ type AppShellProps = {
 
 function AppShell({ activeItem }: AppShellProps) {
   const { itemCount, openCart } = useCart()
-  const { user, logout } = useAuth()
+  const { user, logout, ready } = useAuth()
   const isLoggedIn = user !== null
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header
         activeItem={activeItem}
+        isAuthReady={ready}
         isLoggedIn={isLoggedIn}
         userName={user?.name ?? dashboardData.header.userName}
         userAvatar={

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as ordersCheckoutRouteImport } from './routes/(orders)/checkout'
 import { Route as ordersCartRouteImport } from './routes/(orders)/cart'
 import { Route as authVerificationsRouteImport } from './routes/(auth)/verifications'
@@ -33,6 +34,11 @@ const SlugRoute = SlugRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ordersCheckoutRoute = ordersCheckoutRouteImport.update({
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/verifications': typeof authVerificationsRoute
   '/cart': typeof ordersCartRoute
   '/checkout': typeof ordersCheckoutRoute
+  '/profile/': typeof ProfileIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/verifications': typeof authVerificationsRoute
   '/cart': typeof ordersCartRoute
   '/checkout': typeof ordersCheckoutRoute
+  '/profile': typeof ProfileIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/(auth)/verifications': typeof authVerificationsRoute
   '/(orders)/cart': typeof ordersCartRoute
   '/(orders)/checkout': typeof ordersCheckoutRoute
+  '/profile/': typeof ProfileIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/verifications'
     | '/cart'
     | '/checkout'
+    | '/profile/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/verifications'
     | '/cart'
     | '/checkout'
+    | '/profile'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/(auth)/verifications'
     | '/(orders)/cart'
     | '/(orders)/checkout'
+    | '/profile/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   authVerificationsRoute: typeof authVerificationsRoute
   ordersCartRoute: typeof ordersCartRoute
   ordersCheckoutRoute: typeof ordersCheckoutRoute
+  ProfileIndexRoute: typeof ProfileIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(orders)/checkout': {
@@ -246,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   authVerificationsRoute: authVerificationsRoute,
   ordersCartRoute: ordersCartRoute,
   ordersCheckoutRoute: ordersCheckoutRoute,
+  ProfileIndexRoute: ProfileIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
