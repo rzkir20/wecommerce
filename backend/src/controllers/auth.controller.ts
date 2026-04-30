@@ -6,8 +6,6 @@ import { sign } from 'hono/jwt'
 
 import bcrypt from 'bcryptjs'
 
-import type { RowDataPacket } from 'mysql2'
-
 import { getDb } from '../lib/db.js'
 
 const JWT_EXPIRES_SEC = 60 * 60 * 24 * 7
@@ -27,14 +25,14 @@ export type AuthUser = {
   isVerified: boolean
 }
 
-type DbUserRow = RowDataPacket & {
+type DbUserRow = {
   id: string
   email: string
   name: string
   avatar: string | null
   phone: string | null
   role: UserRole
-  is_verified: number | boolean
+  is_verified: boolean
   password_hash: string
 }
 
@@ -50,8 +48,32 @@ function toAuthUser(row: DbUserRow): AuthUser {
     avatar: row.avatar,
     phone: row.phone,
     role: row.role,
-    isVerified: Boolean(row.is_verified),
+    isVerified: row.is_verified,
   }
+}
+
+async function getUserById(userId: string): Promise<DbUserRow | null> {
+  const db = getDb()
+  const { data, error } = await db
+    .from('users')
+    .select('id, email, name, avatar, phone, role, is_verified, password_hash')
+    .eq('id', userId)
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return (data as DbUserRow | null) ?? null
+}
+
+async function getUserByEmail(email: string): Promise<DbUserRow | null> {
+  const db = getDb()
+  const { data, error } = await db
+    .from('users')
+    .select('id, email, name, avatar, phone, role, is_verified, password_hash')
+    .eq('email', email)
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return (data as DbUserRow | null) ?? null
 }
 
 function isHttpsRequest(c: Context): boolean {
@@ -82,15 +104,7 @@ export async function buildAuthTokenAndUser(
   userId: string,
 ): Promise<{ token: string; user: AuthUser }> {
   const { JWT_SECRET } = c.get('env')
-  const db = getDb()
-  const [rows] = await db.execute<DbUserRow[]>(
-    `SELECT id, email, name, avatar, phone, role, is_verified, password_hash
-     FROM users
-     WHERE id = ?
-     LIMIT 1`,
-    [userId],
-  )
-  const row = rows[0]
+  const row = await getUserById(userId)
   if (!row) {
     throw new Error('User not found')
   }
@@ -181,37 +195,70 @@ export async function register(c: Context) {
     return c.json({ error: 'Role must be one of: super_admins, affiliate, users, seller' }, 400)
   }
 
-  const id = crypto.randomUUID()
   const passwordHash = bcrypt.hashSync(password, 10)
   const db = getDb()
+  let authUserId: string | null = null
 
   try {
-    await db.execute(
-      `INSERT INTO users (id, email, name, avatar, phone, role, is_verified, password_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, email, name, avatar || null, phone || null, role, isVerified, passwordHash],
-    )
+    const { data: authData, error: authError } = await db.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        name,
+        role,
+      },
+    })
+    if (authError) throw authError
+    authUserId = authData.user?.id ?? null
+    if (!authUserId) {
+      throw new Error('Supabase auth user not created')
+    }
+
+    const { error } = await db.from('users').insert({
+      id: authUserId,
+      email,
+      name,
+      avatar: avatar || null,
+      phone: phone || null,
+      role,
+      is_verified: isVerified,
+      password_hash: passwordHash,
+    })
+    if (error) throw error
   } catch (e: unknown) {
     if (
       e &&
       typeof e === 'object' &&
-      'code' in e &&
-      ((e as { code?: string }).code === 'ER_DUP_ENTRY' ||
-        (e as { code?: string }).code === 'ER_DUP_ENTRY_WITH_KEY_NAME')
+      'message' in e &&
+      typeof (e as { message?: string }).message === 'string' &&
+      (e as { message: string }).message.toLowerCase().includes('already')
     ) {
       return c.json({ error: 'Email already registered' }, 409)
+    }
+    if (e && typeof e === 'object' && 'code' in e && (e as { code?: string }).code === '23505') {
+      return c.json({ error: 'Email already registered' }, 409)
+    }
+    if (authUserId) {
+      await db.auth.admin.deleteUser(authUserId).catch(() => {
+        // Best effort rollback when app table insert fails after auth user creation.
+      })
     }
     console.error(e)
     return c.json({ error: 'Registration failed' }, 500)
   }
 
-  const { token } = await buildAuthTokenAndUser(c, id)
+  if (!authUserId) {
+    return c.json({ error: 'Registration failed' }, 500)
+  }
+
+  const { token } = await buildAuthTokenAndUser(c, authUserId)
   setSessionCookie(c, token)
 
   return c.json({
     token,
     user: {
-      id,
+      id: authUserId,
       email,
       name,
       avatar: avatar || null,
@@ -237,15 +284,7 @@ export async function login(c: Context) {
     return c.json({ error: 'Invalid email or password' }, 401)
   }
 
-  const db = getDb()
-  const [rows] = await db.execute<DbUserRow[]>(
-    `SELECT id, email, name, avatar, phone, role, is_verified, password_hash
-     FROM users
-     WHERE email = ?
-     LIMIT 1`,
-    [email],
-  )
-  const user = rows[0]
+  const user = await getUserByEmail(email)
   if (!user) {
     return c.json({ error: 'Invalid email or password' }, 401)
   }
@@ -267,7 +306,7 @@ export async function login(c: Context) {
       avatar: user.avatar,
       phone: user.phone,
       role: user.role,
-      isVerified: Boolean(user.is_verified),
+      isVerified: user.is_verified,
     },
   })
 }
@@ -278,15 +317,7 @@ export async function me(c: Context) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  const db = getDb()
-  const [rows] = await db.execute<DbUserRow[]>(
-    `SELECT id, email, name, avatar, phone, role, is_verified, password_hash
-     FROM users
-     WHERE id = ?
-     LIMIT 1`,
-    [userId],
-  )
-  const row = rows[0]
+  const row = await getUserById(userId)
   if (!row) {
     return c.json({ error: 'Unauthorized' }, 401)
   }

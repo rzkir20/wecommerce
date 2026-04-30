@@ -30,13 +30,8 @@ const schema = z.object({
   JWT_SECRET: z
     .string()
     .min(16, 'JWT_SECRET harus minimal 16 karakter (lihat .env.example)'),
-  /** Optional DSN MySQL, akan di-build dari MYSQL_* kalau kosong. */
-  API_ORIGIN: z.string().optional(),
-  MYSQL_HOST: z.string().default('127.0.0.1'),
-  MYSQL_PORT: z.coerce.number().default(3306),
-  MYSQL_USER: z.string().default('root'),
-  MYSQL_PASSWORD: z.string().default(''),
-  MYSQL_DATABASE: z.string().default('wecommerce'),
+  SUPABASE_URL: z.string().url('SUPABASE_URL wajib URL valid'),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY wajib diisi'),
   CORS_ORIGIN: z.string().optional(),
   SESSION_COOKIE_DOMAIN: z
     .string()
@@ -65,14 +60,5 @@ export function loadEnv(): AppEnv {
     console.error('Env tidak valid:', parsed.error.flatten().fieldErrors)
     process.exit(1)
   }
-  const env = parsed.data
-  if (!env.API_ORIGIN) {
-    const user = encodeURIComponent(env.MYSQL_USER)
-    const pass = encodeURIComponent(env.MYSQL_PASSWORD)
-    const auth = env.MYSQL_PASSWORD ? `${user}:${pass}` : `${user}:`
-    env.API_ORIGIN = `https://${env.MYSQL_HOST}:${env.MYSQL_PORT}/${env.MYSQL_DATABASE}`
-  }
-  // Tetap dipasang agar driver/library yang membaca API_ORIGIN tetap kompatibel.
-  process.env.API_ORIGIN = env.API_ORIGIN
-  return env
+  return parsed.data
 }

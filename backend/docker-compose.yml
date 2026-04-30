@@ -1,33 +1,16 @@
 services:
-  mysql:
-    image: mysql:8.4
-    container_name: wecommerce-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: wecommerce
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
-
   api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: wecommerce-api
     restart: unless-stopped
-    depends_on:
-      - mysql
     environment:
       PORT: 8787
       JWT_SECRET: d15ff670aa9fa51d39564660b33fdb63affa5b7aa0bae151c96df9674376c998
       CORS_ORIGIN: http://localhost:3000,https://e-commerce.rizkiramadhan.web.id
       SESSION_COOKIE_DOMAIN: .rizkiramadhan.web.id
-      DATABASE_URL: mysql://root:root@mysql:3306/wecommerce
+      SUPABASE_URL: https://dlbzsegmyekqrajbgdll.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsYnpzZWdteWVrcXJhamJnZGxsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzU4NjIxMiwiZXhwIjoyMDkzMTYyMjEyfQ.0cUr1DTIdwR3XoYkoJsXq34uZsKW7e4zfFdUd6R8GPY
     ports:
       - "8787:8787"
-
-volumes:
-  mysql_data:

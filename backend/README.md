@@ -1,50 +1,46 @@
-# wecommerce API (Hono)
+# wecommerce API (Hono + Supabase)
 
-## Auth + MySQL (development)
+## Development Setup
 
-### 1) Siapkan MySQL lokal (phpMyAdmin / XAMPP / Laragon)
+### 1) Siapkan env
 
-- Pastikan MySQL jalan di `127.0.0.1:3306`
-- Buat database `wecommerce` (bisa dari phpMyAdmin)
-
-### 2) Setup env
-
-Salin env, lalu isi `JWT_SECRET` (minimal 16 karakter):
+Salin env template:
 
 ```bash
 cp .env.example .env
 ```
 
-(Di **CMD Windows**: `copy .env.example .env`)
-
-Isi `DATABASE_URL` di `.env` (disarankan). Contoh:
+Lalu isi nilai berikut di `.env`:
 
 ```env
-DATABASE_URL="mysql://root:@127.0.0.1:3306/wecommerce"
+JWT_SECRET=<minimal-16-karakter>
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+DATABASE_URL=postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres?sslmode=require
 ```
 
-Kalau tidak diisi, `DATABASE_URL` akan otomatis dibangun dari variabel `MYSQL_*`.
-
-Generate secret:
-
-Di **CMD** atau **PowerShell** (folder apa saja, asal Node terpasang), jalankan:
+Generate `JWT_SECRET`:
 
 ```bat
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Salin output ke baris `JWT_SECRET=` di `.env`.
-
-### 3) Install dependencies + migrate schema manual (SQL)
+### 2) Install dan jalankan API
 
 ```bash
 pnpm install
-mysql -u root -p < schema.sql
+pnpm prisma:generate
+pnpm prisma:migrate
 pnpm dev
 ```
 
 API: `http://localhost:8787`  
- Endpoint auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` (header `Authorization: Bearer <token>`).
+Endpoint auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`.
+
+### 3) Struktur tabel Supabase
+Struktur tabel dikelola Prisma pada `prisma/schema.prisma` dan migration SQL di `prisma/migrations`.
+
+## Cookie Session
 
 Untuk shared login antar subdomain, set:
 
@@ -52,69 +48,13 @@ Untuk shared login antar subdomain, set:
 SESSION_COOKIE_DOMAIN=.rizkiramadhan.web.id
 ```
 
-Nilai dengan format URL seperti `http://rizkiramadhan.web.id/` juga boleh, backend akan otomatis mengambil hostname-nya.
-Backend hanya akan memasang `domain` cookie jika host request cocok, jadi local dev di `localhost` tetap aman meskipun env ini terisi.
-
-Untuk atribut cookie `Secure`:
-
-```env
-# auto (default): aktif saat request HTTPS
-SESSION_COOKIE_SECURE=
-
-# atau paksa:
-# SESSION_COOKIE_SECURE=true
-# SESSION_COOKIE_SECURE=false
-```
-
-Untuk atribut cookie `SameSite`:
-
-```env
-# default:
-SESSION_COOKIE_SAMESITE=lax
-
-# opsi lain:
-# SESSION_COOKIE_SAMESITE=strict
-# SESSION_COOKIE_SAMESITE=none
-```
-
-Jika frontend dan API beda domain (cross-site) di production, gunakan:
+Jika frontend dan API beda domain (cross-site), gunakan:
 
 ```env
 SESSION_COOKIE_SAMESITE=none
 SESSION_COOKIE_SECURE=true
 ```
 
-Tanpa kombinasi ini, browser modern biasanya tidak menyimpan cookie session pada request cross-site sehingga saat refresh user terlihat logout.
+## Cloudflare Worker
 
-## Cloudflare Worker (`pnpm dev:cf`)
-
-Entry `src/index.ts` mengekspor app yang sama, tetapi route auth **membutuhkan MySQL** — Worker tidak cocok untuk `mysql2` langsung. Gunakan Node (`pnpm dev`) untuk auth, atau nanti sambungkan lewat Hyperdrive / layanan DB yang didukung Workers.
-
-## Deploy Worker
-
-```bash
-pnpm deploy
-```
-
-Pastikan `API_ORIGIN` mengarah ke host **upstream Node API** (origin server), bukan ke domain Worker itu sendiri. Jika `API_ORIGIN` diisi ke host yang sama dengan Worker (mis. `be-commerce...`), request akan loop dan berujung timeout/522.
-
-## Docker (Node API + MySQL)
-
-Jalankan API berbasis Node + MySQL di container:
-
-```bash
-docker compose up -d --build
-```
-
-Service yang dijalankan:
-
-- API: `http://localhost:8787`
-- MySQL: `localhost:3306`
-
-Setelah container up pertama kali, jalankan schema manual:
-
-```bash
-docker compose exec -T mysql mysql -uroot -proot wecommerce < schema.sql
-```
-
-`JWT_SECRET`, `CORS_ORIGIN`, `SESSION_COOKIE_DOMAIN`, `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_SAMESITE`, dan `DATABASE_URL` bisa diubah di `docker-compose.yml`.
+File `src/index.ts` saat ini diposisikan sebagai endpoint edge (bukan auth API langsung). Pastikan domain API publik diarahkan ke origin Node API jika Worker proxy tidak dipakai.

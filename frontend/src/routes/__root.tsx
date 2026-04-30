@@ -38,7 +38,7 @@ import { ThemeProvider } from '../context/theme-provider'
 
 import appCss from '../styles.css?url'
 
-import { API_PATHS, getApiUrl } from '../lib/config'
+import { API_PATHS, API_URL } from '../lib/config'
 
 const themeInitializerScript = `
 (() => {
@@ -60,19 +60,23 @@ const themeInitializerScript = `
 
 const getSessionUser = createServerFn({ method: 'GET' }).handler(
   async (): Promise<AuthUser | null> => {
-    const cookie = getRequestHeader('cookie') ?? ''
-    if (!cookie) return null
+    try {
+      const cookie = getRequestHeader('cookie') ?? ''
+      if (!cookie) return null
 
-    const res = await fetch(`${getApiUrl()}${API_PATHS.auth.me}`, {
-      headers: {
-        cookie,
-      },
-    })
+      const res = await fetch(`${API_URL}${API_PATHS.auth.me}`, {
+        headers: {
+          cookie,
+        },
+      })
 
-    if (!res.ok) return null
+      if (!res.ok) return null
 
-    const data = (await res.json()) as { user?: AuthUser }
-    return data.user ?? null
+      const data = (await res.json()) as { user?: AuthUser }
+      return data.user ?? null
+    } catch {
+      return null
+    }
   },
 )
 
@@ -104,10 +108,26 @@ export const Route = createRootRoute({
   notFoundComponent: () => (
     <div className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
       <div className="text-center">
-        <p className="text-sm font-semibold tracking-widest text-muted-foreground uppercase">404</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight">Page Not Found</h1>
+        <p className="text-sm font-semibold tracking-widest text-muted-foreground uppercase">
+          404
+        </p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight">
+          Page Not Found
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Halaman yang kamu buka tidak ditemukan.
+        </p>
+      </div>
+    </div>
+  ),
+  errorComponent: ({ error }) => (
+    <div className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
+      <div className="max-w-md text-center">
+        <h1 className="text-2xl font-black tracking-tight">
+          Terjadi kesalahan
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {error.message || 'Unexpected application error'}
         </p>
       </div>
     </div>

@@ -1,6 +1,4 @@
-export function getApiUrl(): string {
-  return import.meta.env.VITE_API_URL ?? process.env.VITE_API_URL ?? 'http://localhost:8787'
-}
+export const API_URL = import.meta.env.VITE_API_URL
 
 export const API_PATHS = {
   auth: {
@@ -30,7 +28,7 @@ export async function apiJson<T>(
   path: string,
   init?: RequestInit & { token?: string | null },
 ): Promise<T> {
-  const url = `${getApiUrl()}${path}`
+  const url = `${API_URL}${path}`
   const headers = new Headers(init?.headers)
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
@@ -60,9 +58,9 @@ export async function apiJson<T>(
   if (!res.ok) {
     const msg =
       typeof data === 'object' &&
-      data !== null &&
-      'error' in data &&
-      typeof data.error === 'string'
+        data !== null &&
+        'error' in data &&
+        typeof data.error === 'string'
         ? (data as { error: string }).error
         : res.statusText || 'Request failed'
     throw new ApiError(res.status, msg)
