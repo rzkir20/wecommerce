@@ -22,8 +22,9 @@ services:
       - mysql
     environment:
       PORT: 8787
-      JWT_SECRET: change-this-min-16-characters
-      CORS_ORIGIN: http://localhost:3000
+      JWT_SECRET: d15ff670aa9fa51d39564660b33fdb63affa5b7aa0bae151c96df9674376c998
+      CORS_ORIGIN: http://localhost:3000,https://e-commerce.rizkiramadhan.web.id
+      SESSION_COOKIE_DOMAIN: .rizkiramadhan.web.id
       DATABASE_URL: mysql://root:root@mysql:3306/wecommerce
     ports:
       - "8787:8787"

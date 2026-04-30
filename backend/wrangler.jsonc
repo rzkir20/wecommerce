@@ -15,6 +15,7 @@
     "MYSQL_PORT": 3306,
     "MYSQL_USER": "root",
     "MYSQL_PASSWORD": "",
-    "MYSQL_DATABASE": "wecommerce"
+    "MYSQL_DATABASE": "wecommerce",
+    "SESSION_COOKIE_DOMAIN": ".rizkiramadhan.web.id"
   },
 }

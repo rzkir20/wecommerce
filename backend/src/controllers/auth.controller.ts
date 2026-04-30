@@ -80,12 +80,14 @@ export async function buildAuthTokenAndUser(
 }
 
 export function setSessionCookie(c: Context, token: string) {
+  const { SESSION_COOKIE_DOMAIN } = c.get('env')
   setCookie(c, SESSION_COOKIE, token, {
     httpOnly: true,
     secure: false,
     sameSite: 'Lax',
     path: '/',
     maxAge: JWT_EXPIRES_SEC,
+    ...(SESSION_COOKIE_DOMAIN ? { domain: SESSION_COOKIE_DOMAIN } : {}),
   })
 }
 
@@ -251,6 +253,10 @@ export async function me(c: Context) {
 }
 
 export async function logout(c: Context) {
-  deleteCookie(c, SESSION_COOKIE, { path: '/' })
+  const { SESSION_COOKIE_DOMAIN } = c.get('env')
+  deleteCookie(c, SESSION_COOKIE, {
+    path: '/',
+    ...(SESSION_COOKIE_DOMAIN ? { domain: SESSION_COOKIE_DOMAIN } : {}),
+  })
   return c.json({ ok: true })
 }
