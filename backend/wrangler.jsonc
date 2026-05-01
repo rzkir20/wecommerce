@@ -1,21 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "be-wecommerce",
+  "name": "backend",
   "main": "src/index.ts",
-  "compatibility_date": "2026-04-29",
+  "compatibility_date": "2026-05-01",
   "compatibility_flags": [
     "nodejs_compat"
   ],
   "vars": {
+    "PORT": "8787",
+    "SUPABASE_URL": "https://tptyjlgdydmdxfeuflwx.supabase.co",
     "JWT_SECRET": "d15ff670aa9fa51d39564660b33fdb63affa5b7aa0bae151c96df9674376c998",
-    "PORT": 8787,
-    "CORS_ORIGIN": "http://localhost:3000,https://e-commerce.rizkiramadhan.web.id",
-    "API_ORIGIN": "https://be-eccomerce.rizkiramadhan.web.id",
-    "NODE_ENV": "development",
-    "SUPABASE_URL": "https://dlbzsegmyekqrajbgdll.supabase.co",
-    "DATABASE_URL": "postgresql://postgres:8ab7595f7d25f540bee057e79f57f58f18e6e52ac74f920ec35bdf36653cdf72:sk_ZjuN6Y-SrHJFOvRoVEJuk@db.prisma.io:5432/postgres?sslmode=require",
-    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsYnpzZWdteWVrcXJhamJnZGxsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzU4NjIxMiwiZXhwIjoyMDkzMTYyMjEyfQ.0cUr1DTIdwR3XoYkoJsXq34uZsKW7e4zfFdUd6R8GPY",
-    "SESSION_COOKIE_DOMAIN": ".rizkiramadhan.web.id",
-    "SESSION_COOKIE_SAMESITE": "lax"
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwdHlqbGdkeWRtZHhmZXVmbHd4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY1MTgxMSwiZXhwIjoyMDkzMjI3ODExfQ.KUBquDJ83iAXGtCDPVUjFVNp2FQ9pznJip_rTPL_3dY",
+    "DATABASE_URL": "postgresql://postgres:knKQGluxw9AmuqEb@db.tptyjlgdydmdxfeuflwx.supabase.co:5432/postgres",
+    "CORS_ORIGIN": "http://localhost:3000",
+    "SESSION_COOKIE_DOMAIN": ".rizkiramadhan.web.id"
   },
 }

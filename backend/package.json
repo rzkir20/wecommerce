@@ -2,30 +2,27 @@
   "name": "backend",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "node --import tsx src/server.ts",
-    "deploy": "wrangler deploy --minify",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
-    "dev:cf": "wrangler dev",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.9",
-    "@prisma/client": "^7.8.0",
-    "@supabase/supabase-js": "^2.105.1",
+    "@hono/node-server": "^1.14.2",
+    "@prisma/client": "^6.7.0",
+    "@supabase/supabase-js": "^2.53.0",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.6.1",
-    "hono": "^4.12.15",
-    "zod": "^3.25.76"
+    "hono": "^4.12.16",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^22.19.3",
-    "prisma": "^7.8.0",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
+    "@types/node": "^22.15.18",
+    "prisma": "^6.7.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
     "wrangler": "^4.4.0"
   }
 }

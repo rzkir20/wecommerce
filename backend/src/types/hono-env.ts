@@ -1,11 +1,11 @@
-import type { AppEnv } from '../env.js'
-
-declare module 'hono' {
-  interface ContextVariableMap {
-    env: AppEnv
-    /** Di-set oleh middleware `requireAuth` */
-    jwtUserId?: string
-  }
+export type AuthUser = {
+  id: string
+  name: string
+  email: string
 }
 
-export {}
+export type AppBindings = {
+  Variables: {
+    authUser: AuthUser
+  }
+}

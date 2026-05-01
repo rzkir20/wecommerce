@@ -1,13 +1,17 @@
 import { Hono } from 'hono'
 
-import * as AuthController from '../controllers/auth.controller.js'
-
+import {
+  loginController,
+  logoutController,
+  meController,
+  registerController,
+} from '../controllers/auth.controller.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
+import type { AppBindings } from '../types/hono-env.js'
 
-export const authRoutes = new Hono()
-  .post('/register', AuthController.register)
-  .post('/login', AuthController.login)
-  .post('/logout', AuthController.logout)
-  .get('/me', requireAuth, AuthController.me)
+export const authRoutes = new Hono<AppBindings>()
 
-export type { AuthUser } from '../controllers/auth.controller.js'
+authRoutes.post('/register', registerController)
+authRoutes.post('/login', loginController)
+authRoutes.get('/me', requireAuth, meController)
+authRoutes.post('/logout', logoutController)
