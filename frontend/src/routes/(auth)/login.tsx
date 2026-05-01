@@ -38,6 +38,7 @@ function LoginPage() {
     'idle' | 'pending' | 'approved' | 'expired'
   >('idle')
   const [qrExpiresAt, setQrExpiresAt] = useState<number | null>(null)
+  const [nowMs, setNowMs] = useState(() => Date.now())
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -119,6 +120,28 @@ function LoginPage() {
 
   useEffect(() => {
     if (loginMode !== 'qr') return
+    if (qrStatus !== 'pending') return
+    if (!qrExpiresAt) return
+
+    const timer = window.setInterval(() => {
+      setNowMs(Date.now())
+    }, 1000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [loginMode, qrStatus, qrExpiresAt])
+
+  useEffect(() => {
+    if (qrStatus !== 'pending') return
+    if (!qrExpiresAt) return
+    if (nowMs >= qrExpiresAt) {
+      setQrStatus('expired')
+    }
+  }, [nowMs, qrStatus, qrExpiresAt])
+
+  useEffect(() => {
+    if (loginMode !== 'qr') return
     if (qrToken || qrLoading) return
     void startQrLogin()
   }, [loginMode, qrToken, qrLoading])
@@ -131,9 +154,9 @@ function LoginPage() {
 
   const qrCountdown = useMemo(() => {
     if (!qrExpiresAt) return null
-    const seconds = Math.max(0, Math.floor((qrExpiresAt - Date.now()) / 1000))
+    const seconds = Math.max(0, Math.floor((qrExpiresAt - nowMs) / 1000))
     return seconds
-  }, [qrExpiresAt, qrStatus])
+  }, [qrExpiresAt, nowMs])
 
   return (
     <div className="flex min-h-screen items-stretch overflow-hidden bg-background text-foreground">

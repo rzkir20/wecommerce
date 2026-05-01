@@ -76,10 +76,17 @@ export function ScanQrDialog({ open, onOpenChange }: ScanQrDialogProps) {
       }
       setCameraAvailable(true)
 
-      // Wait one frame so video element is fully mounted/visible in dialog.
+      // On some mobile browsers, camera init can race with dialog animation.
+      // Give the video element a moment to be fully visible before starting.
       await new Promise<void>((resolve) => {
-        window.requestAnimationFrame(() => resolve())
+        window.setTimeout(() => resolve(), 250)
       })
+
+      const cameras = await QrScanner.listCameras(true).catch(() => [])
+      const preferredCamera =
+        cameras.find((camera) =>
+          /back|rear|environment|belakang/i.test(camera.label),
+        )?.id ?? 'environment'
 
       scannerRef.current = new QrScanner(
         videoRef.current,
@@ -92,7 +99,7 @@ export function ScanQrDialog({ open, onOpenChange }: ScanQrDialogProps) {
           void submitQrToken(value)
         },
         {
-          preferredCamera: 'environment',
+          preferredCamera,
           highlightScanRegion: false,
           highlightCodeOutline: false,
           returnDetailedScanResult: true,
@@ -175,6 +182,7 @@ export function ScanQrDialog({ open, onOpenChange }: ScanQrDialogProps) {
           <div className="overflow-hidden rounded-xl border border-border bg-black">
             <video
               ref={videoRef}
+              autoPlay
               muted
               playsInline
               className="h-56 w-full object-cover"
