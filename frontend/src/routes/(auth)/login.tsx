@@ -25,7 +25,7 @@ export const Route = createFileRoute('/(auth)/login')({
 
 function LoginPage() {
   const navigate = useNavigate()
-  const { login, loginWithQr } = useAuth()
+  const { login, refreshSession } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -94,10 +94,17 @@ function LoginPage() {
           if (typeof res.expiresAt === 'number') setQrExpiresAt(res.expiresAt)
           return
         }
-        if (res.status === 'approved' && res.user) {
+        if (res.status === 'approved') {
           setQrStatus('approved')
-          loginWithQr({ user: res.user })
-          void navigate({ to: '/', replace: true })
+          const me = await refreshSession()
+          if (me) {
+            void navigate({ to: '/', replace: true })
+            return
+          }
+          setError(
+            'QR disetujui tetapi sesi web tidak aktif. Pastikan izin cookie atau coba lagi.',
+          )
+          setQrStatus('idle')
           return
         }
       } catch (err) {
@@ -116,7 +123,7 @@ function LoginPage() {
     return () => {
       window.clearInterval(timer)
     }
-  }, [loginMode, qrToken, qrStatus, loginWithQr, navigate])
+  }, [loginMode, qrToken, qrStatus, refreshSession, navigate])
 
   useEffect(() => {
     if (loginMode !== 'qr') return

@@ -1,84 +1,17 @@
-import {
-  HeadContent,
-  Outlet,
-  Scripts,
-  createRootRoute,
-  useRouterState,
-} from '@tanstack/react-router'
-
-import { createServerFn } from '@tanstack/react-start'
-
-import { getRequestHeader } from '@tanstack/react-start/server'
+import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
-import { CartModal } from '../components/layout/cart-modal'
-
-import { Footer } from '../components/layout/footer'
-
-import { Header } from '../components/layout/header'
-
-import { ModeToggle } from '../components/ui/mode-toggle'
-
 import {
-  AuthProvider,
-  avatarUrlForEmail,
-  useAuth,
-} from '../context/AuthContext'
+  getSessionUser,
+  themeInitializerScript,
+} from '#/hooks/root-bootstrap.ts'
 
-import type { AuthUser } from '../context/AuthContext'
+import { PathnameLayout } from '#/hooks/Pathname.tsx'
 
-import { CartProvider, useCart } from '../context/CartContext'
-
-import dashboardData from '../data/data.json'
-
-import { ThemeProvider } from '../context/theme-provider'
-
-import appCss from '../styles.css?url'
-
-import { API_PATHS, API_URL } from '../lib/config'
-
-const themeInitializerScript = `
-(() => {
-  const storageKey = 'vite-ui-theme';
-  const root = document.documentElement;
-  const storedTheme = localStorage.getItem(storageKey);
-  const isValidTheme = storedTheme === 'dark' || storedTheme === 'light' || storedTheme === 'system';
-  const preferredTheme = isValidTheme ? storedTheme : 'system';
-  const resolvedTheme =
-    preferredTheme === 'system'
-      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-      : preferredTheme;
-
-  root.classList.remove('light', 'dark');
-  root.classList.add(resolvedTheme);
-  root.style.colorScheme = resolvedTheme;
-})();
-`
-
-const getSessionUser = createServerFn({ method: 'GET' }).handler(
-  async (): Promise<AuthUser | null> => {
-    try {
-      const cookie = getRequestHeader('cookie') ?? ''
-      if (!cookie) return null
-
-      const res = await fetch(`${API_URL}${API_PATHS.auth.me}`, {
-        headers: {
-          cookie,
-        },
-      })
-
-      if (!res.ok) return null
-
-      const data = (await res.json()) as { user?: AuthUser }
-      return data.user ?? null
-    } catch {
-      return null
-    }
-  },
-)
+import appCss from '#/styles.css?url'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -132,87 +65,9 @@ export const Route = createRootRoute({
       </div>
     </div>
   ),
-  component: AppLayout,
+  component: PathnameLayout,
   shellComponent: RootDocument,
 })
-
-function AppLayout() {
-  const { initialUser } = Route.useLoaderData()
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
-  const isAuthRoute =
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/register') ||
-    pathname.startsWith('/forget-password') ||
-    pathname.startsWith('/profile') ||
-    pathname.startsWith('/change-password') ||
-    pathname.startsWith('/verifications')
-
-  const productSlugs = Object.keys(dashboardData.productDetails)
-  const pathSlug = pathname.slice(1).split('/')[0]
-  const isProductDetailPage =
-    productSlugs.length > 0 && productSlugs.includes(pathSlug)
-
-  const activeItem = pathname.startsWith('/products')
-    ? 'products'
-    : isProductDetailPage
-      ? 'products'
-      : pathname.startsWith('/cart') || pathname.startsWith('/checkout')
-        ? 'orders'
-        : pathname.startsWith('/change-password')
-          ? 'settings'
-          : 'dashboard'
-
-  return (
-    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <AuthProvider initialUser={initialUser}>
-        {isAuthRoute ? (
-          <div className="relative min-h-screen">
-            <div className="fixed top-4 right-4 z-50 md:top-6 md:right-8">
-              <ModeToggle />
-            </div>
-            <Outlet />
-          </div>
-        ) : (
-          <CartProvider initialData={dashboardData.cart}>
-            <AppShell activeItem={activeItem} />
-          </CartProvider>
-        )}
-      </AuthProvider>
-    </ThemeProvider>
-  )
-}
-
-type AppShellProps = {
-  activeItem: string
-}
-
-function AppShell({ activeItem }: AppShellProps) {
-  const { itemCount, openCart } = useCart()
-  const { user, logout, ready } = useAuth()
-  const isLoggedIn = user !== null
-
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Header
-        activeItem={activeItem}
-        isAuthReady={ready}
-        isLoggedIn={isLoggedIn}
-        userName={user?.name ?? dashboardData.header.userName}
-        userAvatar={
-          user ? avatarUrlForEmail(user.email) : dashboardData.header.userAvatar
-        }
-        cartCount={itemCount}
-        onCartClick={openCart}
-        onLogout={isLoggedIn ? logout : undefined}
-      />
-      <Outlet />
-      <Footer />
-      <CartModal />
-    </div>
-  )
-}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (

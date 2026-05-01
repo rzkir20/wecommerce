@@ -27,7 +27,7 @@ type AuthState = {
 
 type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<void>
-  loginWithQr: (payload: { user: AuthUser }) => void
+  refreshSession: () => Promise<AuthUser | null>
   register: (name: string, email: string, password: string) => Promise<void>
   logout: () => void
 }
@@ -42,9 +42,32 @@ export function AuthProvider({
   children,
   initialUser,
 }: AuthProviderProps) {
-  const hasInitialState = initialUser !== undefined
+  /** Optimistic SSR hint; canonical session lives on API cookie (often another origin). */
   const [user, setUser] = useState<AuthUser | null>(initialUser ?? null)
-  const [ready, setReady] = useState(hasInitialState)
+  const [ready, setReady] = useState(false)
+
+  const refreshSession = useCallback(async (): Promise<AuthUser | null> => {
+    try {
+      const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.me)
+      setUser(res.user)
+      return res.user
+    } catch {
+      setUser(null)
+      return null
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      await refreshSession()
+      if (!cancelled) setReady(true)
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [refreshSession])
 
   const logout = useCallback(() => {
     void apiJson<{ ok: boolean }>(API_PATHS.auth.logout, { method: 'POST' }).catch(() => {
@@ -52,29 +75,6 @@ export function AuthProvider({
     })
     setUser(null)
   }, [])
-
-  useEffect(() => {
-    if (ready) return
-    let cancelled = false
-    const run = async () => {
-      try {
-        const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.me)
-        if (!cancelled) {
-          setUser(res.user)
-        }
-      } catch {
-        if (!cancelled) {
-          setUser(null)
-        }
-      } finally {
-        if (!cancelled) setReady(true)
-      }
-    }
-    void run()
-    return () => {
-      cancelled = true
-    }
-  }, [ready])
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -86,10 +86,6 @@ export function AuthProvider({
     },
     [],
   )
-
-  const loginWithQr = useCallback((payload: { user: AuthUser }) => {
-    setUser(payload.user)
-  }, [])
 
   const register = useCallback(
     async (name: string, email: string, password: string) => {
@@ -107,11 +103,11 @@ export function AuthProvider({
       user,
       ready,
       login,
-      loginWithQr,
+      refreshSession,
       register,
       logout,
     }),
-    [user, ready, login, loginWithQr, register, logout],
+    [user, ready, login, refreshSession, register, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
