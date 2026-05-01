@@ -6,6 +6,7 @@ import { env } from './config/env.js'
 import { authRoutes } from './routes/auth.routes.js'
 
 import { healthRoutes } from './routes/health.routes.js'
+import { qrRoutes } from './routes/qr.routes.js'
 
 import type { AppBindings } from './types/hono-env.js'
 
@@ -34,3 +35,4 @@ app.use(
 
 app.route('/', healthRoutes)
 app.route('/api/auth', authRoutes)
+app.route('/api/qr', qrRoutes)

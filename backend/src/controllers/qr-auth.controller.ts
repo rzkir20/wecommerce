@@ -14,9 +14,15 @@ import {
 } from '../services/qr-login.service.js'
 import type { AppBindings } from '../types/hono-env.js'
 
-const approveQrSchema = z.object({
-  token: z.string().min(1, 'Token QR wajib diisi'),
-})
+const approveQrSchema = z
+  .object({
+    token: z.string().min(1).optional(),
+    qrToken: z.string().min(1).optional(),
+  })
+  .refine((data) => Boolean(data.token || data.qrToken), {
+    message: 'Token QR wajib diisi',
+    path: ['token'],
+  })
 
 function setSessionCookie(c: Context, token: string) {
   setCookie(c, AUTH_COOKIE, token, {
@@ -32,9 +38,11 @@ export function startQrLoginController(c: Context) {
   const session = createQrLoginSession()
   return c.json(
     {
+      qrToken: session.token,
+      expiresAt: Date.parse(session.expiresAt),
       token: session.token,
       status: session.status,
-      expiresAt: session.expiresAt,
+      expiresAtIso: session.expiresAt,
       // String ini bisa langsung dijadikan isi QR di frontend.
       qrValue: session.token,
     },
@@ -51,7 +59,7 @@ export function qrLoginStatusController(c: Context) {
   const result = getQrLoginSessionStatus(token)
 
   if (!result.found) {
-    return c.json({ status: 'expired' }, 404)
+    return c.json({ status: 'expired', expiresAt: result.expiresAt }, 404)
   }
 
   if (result.status === 'approved' && result.authToken && result.user) {
@@ -59,11 +67,12 @@ export function qrLoginStatusController(c: Context) {
     markQrLoginSessionUsed(token)
     return c.json({
       status: 'approved',
+      expiresAt: result.expiresAt,
       user: result.user,
     })
   }
 
-  return c.json({ status: result.status })
+  return c.json({ status: result.status, expiresAt: result.expiresAt })
 }
 
 export async function approveQrLoginController(c: Context<AppBindings>) {
@@ -73,7 +82,9 @@ export async function approveQrLoginController(c: Context<AppBindings>) {
     return c.json({ error: parsed.error.issues[0]?.message ?? 'Input tidak valid' }, 400)
   }
 
-  const result = await approveQrLoginSession(parsed.data.token, c.get('authUser'))
+  const qrToken = parsed.data.qrToken ?? parsed.data.token ?? ''
+
+  const result = await approveQrLoginSession(qrToken, c.get('authUser'))
   if (!result.ok) {
     if (result.status === 404) {
       return c.json({ error: result.error }, 404)

@@ -94,6 +94,7 @@ export function getQrLoginSessionStatus(token: string) {
     return {
       found: false as const,
       status: 'expired' as const,
+      expiresAt: Date.now(),
     }
   }
 
@@ -102,6 +103,7 @@ export function getQrLoginSessionStatus(token: string) {
     return {
       found: true as const,
       status: 'expired' as const,
+      expiresAt: session.expiresAt,
     }
   }
 
@@ -109,6 +111,7 @@ export function getQrLoginSessionStatus(token: string) {
     return {
       found: true as const,
       status: 'approved' as const,
+      expiresAt: session.expiresAt,
       user: session.approvedBy,
       authToken: session.authToken,
     }
@@ -117,6 +120,7 @@ export function getQrLoginSessionStatus(token: string) {
   return {
     found: true as const,
     status: session.status,
+    expiresAt: session.expiresAt,
   }
 }
 
