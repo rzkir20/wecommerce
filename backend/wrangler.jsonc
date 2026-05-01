@@ -10,6 +10,7 @@
     "JWT_SECRET": "d15ff670aa9fa51d39564660b33fdb63affa5b7aa0bae151c96df9674376c998",
     "PORT": 8787,
     "CORS_ORIGIN": "http://localhost:3000,https://e-commerce.rizkiramadhan.web.id",
+    "API_ORIGIN": "https://be-eccomerce.rizkiramadhan.web.id",
     "NODE_ENV": "development",
     "SUPABASE_URL": "https://dlbzsegmyekqrajbgdll.supabase.co",
     "DATABASE_URL": "postgresql://postgres:8ab7595f7d25f540bee057e79f57f58f18e6e52ac74f920ec35bdf36653cdf72:sk_ZjuN6Y-SrHJFOvRoVEJuk@db.prisma.io:5432/postgres?sslmode=require",
