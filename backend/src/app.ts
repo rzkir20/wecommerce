@@ -14,18 +14,29 @@ import { authRoutes } from './routes/auth.routes.js'
 
 import { qrRoutes } from './routes/qr.routes.js'
 
+function normalizeOrigin(origin: string): string {
+  const trimmed = origin.trim()
+  if (!trimmed) return ''
+
+  try {
+    const url = new URL(trimmed)
+    return url.origin.toLowerCase()
+  } catch {
+    return trimmed.replace(/\/$/, '').toLowerCase()
+  }
+}
+
 function parseAllowedOrigins(value?: string): string[] {
   if (!value) return []
   return value
     .split(',')
-    .map((item) => item.trim())
+    .map((item) => normalizeOrigin(item))
     .filter(Boolean)
 }
 
 export function createApp(env: AppEnv) {
   const app = new Hono()
   const allowedOrigins = parseAllowedOrigins(env.CORS_ORIGIN)
-  const fallbackOrigin = allowedOrigins[0]
 
   app.onError(errorHandler)
 
@@ -34,10 +45,12 @@ export function createApp(env: AppEnv) {
     '*',
     cors({
       origin: (origin) => {
-        if (!origin) return fallbackOrigin ?? ''
+        if (!origin) return ''
         if (allowedOrigins.length === 0) return origin
-        if (allowedOrigins.includes(origin)) return origin
-        return fallbackOrigin ?? ''
+
+        const requestOrigin = normalizeOrigin(origin)
+        if (allowedOrigins.includes(requestOrigin)) return requestOrigin
+        return ''
       },
       allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization'],
