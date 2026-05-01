@@ -6,7 +6,7 @@ import { AUTH_COOKIE } from '../constants/auth.js'
 
 import { verifyAuthToken } from '../lib/auth.js'
 
-import { prisma } from '../lib/prisma.js'
+import { supabaseAdmin } from '../lib/supabase.js'
 
 import type { AppBindings } from '../types/hono-env.js'
 
@@ -21,16 +21,13 @@ export const requireAuth = createMiddleware<AppBindings>(async (c, next) => {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: payload.sub },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-    },
-  })
+  const { data: user, error } = await supabaseAdmin
+    .from('users')
+    .select('id, name, email')
+    .eq('id', payload.sub)
+    .maybeSingle()
 
-  if (!user) {
+  if (error || !user) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 

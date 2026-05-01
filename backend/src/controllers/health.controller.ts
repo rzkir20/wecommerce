@@ -1,7 +1,4 @@
 import type { Context } from 'hono'
-
-import { prisma } from '../lib/prisma.js'
-
 import { supabaseAdmin } from '../lib/supabase.js'
 
 export function rootController(c: Context) {
@@ -11,10 +8,23 @@ export function rootController(c: Context) {
 }
 
 export async function healthController(c: Context) {
-  const now = await prisma.$queryRawUnsafe<{ now: string }[]>('SELECT NOW()::text as now')
+  const { count, error } = await supabaseAdmin
+    .from('users')
+    .select('id', { count: 'exact', head: true })
+
+  if (error) {
+    return c.json(
+      {
+        status: 'error',
+        message: error.message,
+      },
+      500
+    )
+  }
+
   return c.json({
     status: 'ok',
-    database: now[0]?.now ?? null,
+    usersCount: count ?? 0,
   })
 }
 

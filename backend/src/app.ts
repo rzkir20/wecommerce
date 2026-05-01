@@ -1,7 +1,4 @@
 import { Hono } from 'hono'
-
-import { Prisma } from '@prisma/client'
-
 import { cors } from 'hono/cors'
 
 import { env } from './config/env.js'
@@ -16,19 +13,12 @@ export const app = new Hono<AppBindings>()
 
 app.onError((err, c) => {
   console.error(err)
-
-  if (err instanceof Prisma.PrismaClientInitializationError) {
-    return c.json(
-      {
-        error: 'Database tidak bisa diakses. Cek koneksi database/server.',
-      },
-      503
-    )
-  }
+  const message = err instanceof Error ? err.message : String(err)
 
   return c.json(
     {
       error: 'Internal server error',
+      detail: message,
     },
     500
   )
