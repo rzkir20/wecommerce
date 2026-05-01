@@ -1,4 +1,7 @@
 import { prisma } from '../lib/prisma.js'
+
+import { supabaseAdmin } from '../lib/supabase.js'
+
 import { comparePassword, hashPassword, signAuthToken } from '../lib/auth.js'
 import type { AuthUser } from '../types/hono-env.js'
 
@@ -20,19 +23,45 @@ export async function registerUser(input: {
     return { ok: false, error: 'Email sudah terdaftar' }
   }
 
-  const user = await prisma.user.create({
-    data: {
+  const { data: authCreated, error: authCreateError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password: input.password,
+    email_confirm: true,
+    user_metadata: {
       name,
-      email,
-      password_hash: passwordHash,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
     },
   })
+
+  if (authCreateError || !authCreated.user) {
+    return {
+      ok: false,
+      error: authCreateError?.message ?? 'Gagal membuat user Authentication',
+    }
+  }
+
+  const authUserId = authCreated.user.id
+
+  let user: AuthUser
+  try {
+    user = await prisma.user.create({
+      data: {
+        id: authUserId,
+        name,
+        email,
+        password_hash: passwordHash,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    })
+  } catch {
+    // Keep Supabase Auth and app table in sync if DB insert fails.
+    await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => null)
+    return { ok: false, error: 'Gagal menyimpan user ke database aplikasi' }
+  }
 
   const token = await signAuthToken({
     sub: user.id,
