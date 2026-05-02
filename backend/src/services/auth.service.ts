@@ -8,9 +8,17 @@ import type { AuthUser } from '../types/hono-env.js'
 
 type AuthResult =
   | { ok: true; user: AuthUser; token: string }
-  | { ok: false; error: string; httpStatus?: 401 | 409 | 503; debugCode?: string }
+  | {
+      ok: false
+      error: string
+      httpStatus?: 401 | 409 | 503
+      debugCode?: string
+      /** Dari PostgREST — bantu debug tanpa membuka log server. */
+      postgrestMessage?: string
+      hint?: string | null
+    }
 
-/** Pesan untuk error PostgREST ke tabel `users` (tabel belum dimigrasi, API key, dll.). */
+/** Pesan untuk error PostgREST ke tabel `users` (tabel belum dimigrasi, RLS, API key, dll.). */
 function mapUsersTableError(err: PostgrestError): { error: string; debugCode: string } {
   const code = err.code ?? 'unknown'
   const msg = `${err.message ?? ''} ${err.details ?? ''} ${err.hint ?? ''}`.toLowerCase()
@@ -27,10 +35,22 @@ function mapUsersTableError(err: PostgrestError): { error: string; debugCode: st
       debugCode: code,
     }
   }
+  // 42501 / "permission denied" sering dari RLS jika yang terpasang bukan service_role, atau policy memblokir.
+  if (
+    msg.includes('row-level security') ||
+    msg.includes('row level security') ||
+    msg.includes('violates row-level security')
+  ) {
+    return {
+      error:
+        'Akses ke users ditolak oleh Row Level Security. Untuk Worker/backend wajib pakai **service_role** key (bukan anon). Di Supabase: Settings → API → *service_role* secret. Simpan lewat `wrangler secret put SUPABASE_SERVICE_ROLE_KEY` (hindari vars panjang di jsonc).',
+      debugCode: code,
+    }
+  }
   if (msg.includes('permission denied') || code === '42501') {
     return {
       error:
-        'Akses ke tabel users ditolak. Pastikan memakai SUPABASE_SERVICE_ROLE_KEY project yang benar.',
+        'PostgreSQL menolak akses ke tabel users (42501). Bukan hanya “salah kunci”: cek juga RLS di Table Editor, GRANT, dan bahwa Worker memakai service_role key penuh tanpa terpotong.',
       debugCode: code,
     }
   }
@@ -44,6 +64,17 @@ function mapUsersTableError(err: PostgrestError): { error: string; debugCode: st
   return {
     error: 'Database tidak dapat diakses.',
     debugCode: code,
+  }
+}
+
+function usersQueryFailure(err: PostgrestError, mapped: { error: string; debugCode: string }) {
+  return {
+    ok: false as const,
+    error: mapped.error,
+    httpStatus: 503 as const,
+    debugCode: mapped.debugCode,
+    postgrestMessage: err.message,
+    hint: err.hint ?? undefined,
   }
 }
 
@@ -67,7 +98,7 @@ export async function registerUser(input: {
   if (existingErr) {
     console.error('[registerUser] users lookup', existingErr)
     const mapped = mapUsersTableError(existingErr)
-    return { ok: false, error: mapped.error, httpStatus: 503, debugCode: mapped.debugCode }
+    return usersQueryFailure(existingErr, mapped)
   }
 
   if (existing) {
@@ -114,7 +145,7 @@ export async function registerUser(input: {
     console.error('[registerUser] users insert', insertErr)
     if (insertErr) {
       const mapped = mapUsersTableError(insertErr)
-      return { ok: false, error: mapped.error, httpStatus: 503, debugCode: mapped.debugCode }
+      return usersQueryFailure(insertErr, mapped)
     }
     return { ok: false, error: 'Gagal menyimpan user ke database aplikasi', httpStatus: 503 }
   }
@@ -169,7 +200,7 @@ export async function loginUser(input: {
   if (userErr) {
     console.error('[loginUser] users lookup', userErr)
     const mapped = mapUsersTableError(userErr)
-    return { ok: false, error: mapped.error, httpStatus: 503, debugCode: mapped.debugCode }
+    return usersQueryFailure(userErr, mapped)
   }
 
   if (!userRow) {

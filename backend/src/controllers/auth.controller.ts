@@ -55,6 +55,8 @@ export async function registerController(c: Context) {
         {
           error: result.error,
           ...(result.debugCode ? { code: result.debugCode } : {}),
+          ...(result.postgrestMessage ? { message: result.postgrestMessage } : {}),
+          ...(result.hint ? { hint: result.hint } : {}),
         },
         status,
       )
@@ -88,6 +90,8 @@ export async function loginController(c: Context) {
         {
           error: result.error,
           ...(result.debugCode ? { code: result.debugCode } : {}),
+          ...(result.postgrestMessage ? { message: result.postgrestMessage } : {}),
+          ...(result.hint ? { hint: result.hint } : {}),
         },
         status,
       )
