@@ -1,3 +1,5 @@
+import type { PostgrestError } from '@supabase/supabase-js'
+
 import { hashPassword, signAuthToken } from '../lib/auth.js'
 
 import { supabaseAdmin } from '../lib/supabase.js'
@@ -6,7 +8,44 @@ import type { AuthUser } from '../types/hono-env.js'
 
 type AuthResult =
   | { ok: true; user: AuthUser; token: string }
-  | { ok: false; error: string; httpStatus?: 401 | 409 | 503 }
+  | { ok: false; error: string; httpStatus?: 401 | 409 | 503; debugCode?: string }
+
+/** Pesan untuk error PostgREST ke tabel `users` (tabel belum dimigrasi, API key, dll.). */
+function mapUsersTableError(err: PostgrestError): { error: string; debugCode: string } {
+  const code = err.code ?? 'unknown'
+  const msg = `${err.message ?? ''} ${err.details ?? ''} ${err.hint ?? ''}`.toLowerCase()
+
+  if (
+    msg.includes('does not exist') ||
+    msg.includes('schema cache') ||
+    msg.includes('could not find the table') ||
+    msg.includes('undefined_table')
+  ) {
+    return {
+      error:
+        'Tabel public.users tidak ada di database Supabase project ini. Jalankan migrasi ke DB yang sama (mis. DATABASE_URL Supabase lalu `npx prisma migrate deploy`), lalu cek Table Editor.',
+      debugCode: code,
+    }
+  }
+  if (msg.includes('permission denied') || code === '42501') {
+    return {
+      error:
+        'Akses ke tabel users ditolak. Pastikan memakai SUPABASE_SERVICE_ROLE_KEY project yang benar.',
+      debugCode: code,
+    }
+  }
+  if (msg.includes('jwt') || msg.includes('invalid api') || msg.includes('api key')) {
+    return {
+      error: 'Konfigurasi Supabase tidak valid (URL atau service role key).',
+      debugCode: code,
+    }
+  }
+
+  return {
+    error: 'Database tidak dapat diakses.',
+    debugCode: code,
+  }
+}
 
 export async function registerUser(input: {
   name: string
@@ -27,7 +66,8 @@ export async function registerUser(input: {
 
   if (existingErr) {
     console.error('[registerUser] users lookup', existingErr)
-    return { ok: false, error: 'Database tidak dapat diakses.', httpStatus: 503 }
+    const mapped = mapUsersTableError(existingErr)
+    return { ok: false, error: mapped.error, httpStatus: 503, debugCode: mapped.debugCode }
   }
 
   if (existing) {
@@ -72,6 +112,10 @@ export async function registerUser(input: {
       return { ok: false, error: 'Email sudah terdaftar' }
     }
     console.error('[registerUser] users insert', insertErr)
+    if (insertErr) {
+      const mapped = mapUsersTableError(insertErr)
+      return { ok: false, error: mapped.error, httpStatus: 503, debugCode: mapped.debugCode }
+    }
     return { ok: false, error: 'Gagal menyimpan user ke database aplikasi', httpStatus: 503 }
   }
 
@@ -124,7 +168,8 @@ export async function loginUser(input: {
 
   if (userErr) {
     console.error('[loginUser] users lookup', userErr)
-    return { ok: false, error: 'Database tidak dapat diakses.', httpStatus: 503 }
+    const mapped = mapUsersTableError(userErr)
+    return { ok: false, error: mapped.error, httpStatus: 503, debugCode: mapped.debugCode }
   }
 
   if (!userRow) {

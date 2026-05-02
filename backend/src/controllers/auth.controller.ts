@@ -51,7 +51,13 @@ export async function registerController(c: Context) {
     const result = await registerUser(parsed.data)
     if (!result.ok) {
       const status = (result.httpStatus ?? 409) as 409 | 503
-      return c.json({ error: result.error }, status)
+      return c.json(
+        {
+          error: result.error,
+          ...(result.debugCode ? { code: result.debugCode } : {}),
+        },
+        status,
+      )
     }
 
     setSessionCookie(c, result.token)
@@ -78,7 +84,13 @@ export async function loginController(c: Context) {
     const result = await loginUser(parsed.data)
     if (!result.ok) {
       const status = (result.httpStatus ?? 401) as 401 | 503
-      return c.json({ error: result.error }, status)
+      return c.json(
+        {
+          error: result.error,
+          ...(result.debugCode ? { code: result.debugCode } : {}),
+        },
+        status,
+      )
     }
 
     setSessionCookie(c, result.token)
