@@ -1,6 +1,6 @@
 import type { Context } from 'hono'
 
-import { deleteCookie, setCookie } from 'hono/cookie'
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 
 import { env } from '../config/env.js'
 
@@ -9,6 +9,11 @@ import { AUTH_COOKIE } from '../constants/auth.js'
 import { parseLoginInput, parseRegisterInput } from '../lib/auth.js'
 
 import { loginUser, registerUser } from '../services/auth.service.js'
+import {
+  listLoginHistories,
+  markLoginHistoryLoggedOut,
+  recordLoginHistory,
+} from '../services/login-history.service.js'
 
 import type { AppBindings } from '../types/hono-env.js'
 
@@ -22,14 +27,32 @@ function isHttps(c: Context): boolean {
   }
 }
 
+function resolveCookieDomain(c: Context): string | undefined {
+  const configured = env.sessionCookieDomain
+  if (!configured) return undefined
+
+  const normalized = configured.startsWith('.') ? configured.slice(1) : configured
+  try {
+    const host = new URL(c.req.url).hostname.toLowerCase()
+    if (host === normalized || host.endsWith(`.${normalized}`)) {
+      return configured
+    }
+  } catch {
+    return undefined
+  }
+
+  return undefined
+}
+
 function sessionCookieBase(c: Context) {
   const secure = isHttps(c)
+  const domain = resolveCookieDomain(c)
   return {
     path: '/' as const,
     httpOnly: true as const,
     sameSite: 'Lax' as const,
     secure,
-    ...(env.sessionCookieDomain ? { domain: env.sessionCookieDomain } : {}),
+    ...(domain ? { domain } : {}),
   }
 }
 
@@ -63,6 +86,7 @@ export async function registerController(c: Context) {
     }
 
     setSessionCookie(c, result.token)
+    await recordLoginHistory(c, result.user, result.token)
     return c.json({ user: result.user }, 201)
   } catch (err) {
     console.error('[register]', err)
@@ -98,6 +122,7 @@ export async function loginController(c: Context) {
     }
 
     setSessionCookie(c, result.token)
+    await recordLoginHistory(c, result.user, result.token)
     return c.json({ user: result.user })
   } catch (err) {
     console.error('[login]', err)
@@ -114,7 +139,16 @@ export async function meController(c: Context<AppBindings>) {
   return c.json({ user: c.get('authUser') })
 }
 
-export function logoutController(c: Context) {
+export async function historiesController(c: Context<AppBindings>) {
+  const authUser = c.get('authUser')
+  const currentToken = getCookie(c, AUTH_COOKIE)
+  const histories = await listLoginHistories(authUser.id, currentToken)
+  return c.json({ histories })
+}
+
+export async function logoutController(c: Context) {
+  const currentToken = getCookie(c, AUTH_COOKIE)
+  await markLoginHistoryLoggedOut(currentToken)
   deleteCookie(c, AUTH_COOKIE, sessionCookieBase(c))
   return c.json({ ok: true })
 }

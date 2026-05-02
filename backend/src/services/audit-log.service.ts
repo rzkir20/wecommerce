@@ -10,6 +10,7 @@ type AuditLogInput = {
 
 export async function writeAuditLog(input: AuditLogInput): Promise<void> {
   const { error } = await supabaseAdmin.from('logs').insert({
+    id: crypto.randomUUID(),
     action: input.action.slice(0, 100),
     description: input.description?.slice(0, 1000) ?? null,
     target_table: input.targetTable?.slice(0, 100) ?? null,

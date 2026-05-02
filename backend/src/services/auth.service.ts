@@ -1,8 +1,13 @@
 import type { PostgrestError } from '@supabase/supabase-js'
 
+import { createClient } from '@supabase/supabase-js'
+
 import { hashPassword, signAuthToken } from '../lib/auth.js'
 
+import { env } from '../config/env.js'
+
 import { supabaseAdmin } from '../lib/supabase.js'
+
 import { writeAuditLog } from './audit-log.service.js'
 
 import type { AuthUser } from '../types/hono-env.js'
@@ -10,14 +15,14 @@ import type { AuthUser } from '../types/hono-env.js'
 type AuthResult =
   | { ok: true; user: AuthUser; token: string }
   | {
-      ok: false
-      error: string
-      httpStatus?: 401 | 409 | 503
-      debugCode?: string
-      /** Dari PostgREST — bantu debug tanpa membuka log server. */
-      postgrestMessage?: string
-      hint?: string | null
-    }
+    ok: false
+    error: string
+    httpStatus?: 401 | 409 | 503
+    debugCode?: string
+    /** Dari PostgREST — bantu debug tanpa membuka log server. */
+    postgrestMessage?: string
+    hint?: string | null
+  }
 
 /** Pesan untuk error PostgREST ke tabel `users` (tabel belum dimigrasi, RLS, API key, dll.). */
 function mapUsersTableError(err: PostgrestError): { error: string; debugCode: string } {
@@ -198,10 +203,20 @@ export async function loginUser(input: {
   password: string
 }): Promise<AuthResult> {
   const email = input.email.trim().toLowerCase()
-  const { data: authSignInData, error: authSignInError } = await supabaseAdmin.auth.signInWithPassword({
-    email,
-    password: input.password,
+  // Isolated client to avoid mutating shared admin client auth state.
+  const authClient = createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
   })
+
+  const { data: authSignInData, error: authSignInError } =
+    await authClient.auth.signInWithPassword({
+      email,
+      password: input.password,
+    })
 
   const supabaseUser = authSignInData?.user
   if (authSignInError || !supabaseUser) {

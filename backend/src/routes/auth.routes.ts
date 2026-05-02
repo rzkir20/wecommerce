@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 
 import {
+  historiesController,
   loginController,
   logoutController,
   meController,
@@ -17,6 +18,7 @@ export const authRoutes = new Hono<AppBindings>()
 
 authRoutes.post('/register', registerController)
 authRoutes.post('/login', loginController)
+authRoutes.get('/histories', requireAuth, historiesController)
 authRoutes.get('/me', requireAuth, meController)
 authRoutes.post('/logout', logoutController)
 authRoutes.route('/qr', qrAuthRoutes)

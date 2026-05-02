@@ -35,6 +35,7 @@ model User {
   is_verified         Boolean              @default(false)
   password_hash       String               @db.VarChar(255)
   created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  login_histories     LoginHistory[]
   logs                Log[]
   qr_login_sessions   QrLoginSession[]
   seller_applications SellerApplication[]
@@ -103,4 +104,24 @@ model QrLoginSession {
   @@index([approved_user_id], map: "idx_qr_login_sessions_approved_user_id")
   @@index([status, expires_at], map: "idx_qr_login_sessions_status_expires_at")
   @@map("qr_login_sessions")
+}
+
+model LoginHistory {
+  id                Int       @id @default(autoincrement())
+  user_id           String    @db.Uuid
+  token_id          String    @unique @db.VarChar(128)
+  ip_address        String?   @db.VarChar(64)
+  user_agent        String?   @db.VarChar(1000)
+  location          String?   @db.VarChar(255)
+  device            String?   @db.VarChar(255)
+  login_date        DateTime  @default(now()) @db.Timestamptz(6)
+  logout_date       DateTime? @db.Timestamptz(6)
+  is_active         Boolean   @default(true)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+  user              User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([user_id], map: "idx_login_histories_user_id")
+  @@index([user_id, login_date], map: "idx_login_histories_user_login_date")
+  @@map("login_histories")
 }

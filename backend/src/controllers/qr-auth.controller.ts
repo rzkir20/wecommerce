@@ -9,6 +9,10 @@ import { env } from '../config/env.js'
 import { AUTH_COOKIE } from '../constants/auth.js'
 
 import {
+  recordLoginHistory,
+} from '../services/login-history.service.js'
+
+import {
   approveQrLoginSession,
   createQrLoginSession,
   getQrLoginSessionStatus,
@@ -29,6 +33,23 @@ const approveQrSchema = z
     path: ['token'],
   })
 
+function resolveCookieDomain(c: Context): string | undefined {
+  const configured = env.sessionCookieDomain
+  if (!configured) return undefined
+
+  const normalized = configured.startsWith('.') ? configured.slice(1) : configured
+  try {
+    const host = new URL(c.req.url).hostname.toLowerCase()
+    if (host === normalized || host.endsWith(`.${normalized}`)) {
+      return configured
+    }
+  } catch {
+    return undefined
+  }
+
+  return undefined
+}
+
 function setSessionCookie(c: Context, token: string) {
   const forwarded = c.req.header('x-forwarded-proto')
   const secure =
@@ -41,12 +62,13 @@ function setSessionCookie(c: Context, token: string) {
       }
     })()
 
+  const domain = resolveCookieDomain(c)
   setCookie(c, AUTH_COOKIE, token, {
     path: '/',
     httpOnly: true,
     sameSite: 'Lax',
     secure,
-    ...(env.sessionCookieDomain ? { domain: env.sessionCookieDomain } : {}),
+    ...(domain ? { domain } : {}),
     maxAge: 60 * 60 * 24 * 7,
   })
 }
@@ -87,6 +109,7 @@ export async function qrLoginStatusController(c: Context) {
 
   if (result.status === 'approved' && result.authToken && result.user) {
     setSessionCookie(c, result.authToken)
+    await recordLoginHistory(c, result.user, result.authToken)
     await markQrLoginSessionUsed(token)
     await writeAuditLog({
       action: 'qr_login_success',
