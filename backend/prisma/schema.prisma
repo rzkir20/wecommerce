@@ -36,6 +36,7 @@ model User {
   password_hash       String               @db.VarChar(255)
   created_at          DateTime             @default(now()) @db.Timestamptz(6)
   logs                Log[]
+  qr_login_sessions   QrLoginSession[]
   seller_applications SellerApplication[]
   shops               Shop[]
 
@@ -84,4 +85,22 @@ model Log {
   @@index([user_id], map: "idx_logs_user_id")
   @@index([target_table, target_id], map: "idx_logs_target")
   @@map("logs")
+}
+
+model QrLoginSession {
+  token               String    @id @db.VarChar(128)
+  status              String    @db.VarChar(16)
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at          DateTime  @db.Timestamptz(6)
+  approved_user_id    String?   @db.Uuid
+  approved_user       User?     @relation(fields: [approved_user_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  approved_user_name  String?   @db.VarChar(255)
+  approved_user_email String?   @db.VarChar(255)
+  approved_user_phone String?   @db.VarChar(32)
+  auth_token          String?   @db.Text
+  used_at             DateTime? @db.Timestamptz(6)
+
+  @@index([approved_user_id], map: "idx_qr_login_sessions_approved_user_id")
+  @@index([status, expires_at], map: "idx_qr_login_sessions_status_expires_at")
+  @@map("qr_login_sessions")
 }

@@ -14,6 +14,9 @@ import {
   getQrLoginSessionStatus,
   markQrLoginSessionUsed,
 } from '../services/qr-login.service.js'
+
+import { writeAuditLog } from '../services/audit-log.service.js'
+
 import type { AppBindings } from '../types/hono-env.js'
 
 const approveQrSchema = z
@@ -48,8 +51,14 @@ function setSessionCookie(c: Context, token: string) {
   })
 }
 
-export function startQrLoginController(c: Context) {
-  const session = createQrLoginSession()
+export async function startQrLoginController(c: Context) {
+  const session = await createQrLoginSession()
+  await writeAuditLog({
+    action: 'qr_login_init',
+    description: 'QR login session dibuat',
+    targetTable: 'qr_login_sessions',
+    targetId: session.token,
+  })
   return c.json(
     {
       qrToken: session.token,
@@ -64,13 +73,13 @@ export function startQrLoginController(c: Context) {
   )
 }
 
-export function qrLoginStatusController(c: Context) {
+export async function qrLoginStatusController(c: Context) {
   const token = c.req.param('token')
   if (!token) {
     return c.json({ error: 'Token QR wajib diisi' }, 400)
   }
 
-  const result = getQrLoginSessionStatus(token)
+  const result = await getQrLoginSessionStatus(token)
 
   if (!result.found) {
     return c.json({ status: 'expired', expiresAt: result.expiresAt }, 404)
@@ -78,7 +87,14 @@ export function qrLoginStatusController(c: Context) {
 
   if (result.status === 'approved' && result.authToken && result.user) {
     setSessionCookie(c, result.authToken)
-    markQrLoginSessionUsed(token)
+    await markQrLoginSessionUsed(token)
+    await writeAuditLog({
+      action: 'qr_login_success',
+      description: `QR login berhasil untuk ${result.user.email}`,
+      targetTable: 'qr_login_sessions',
+      targetId: token,
+      userId: result.user.id,
+    })
     return c.json({
       status: 'approved',
       expiresAt: result.expiresAt,
@@ -108,6 +124,15 @@ export async function approveQrLoginController(c: Context<AppBindings>) {
     }
     return c.json({ error: result.error }, 409)
   }
+
+  const authUser = c.get('authUser')
+  await writeAuditLog({
+    action: 'qr_login_approve',
+    description: `QR disetujui oleh ${authUser.email}`,
+    targetTable: 'qr_login_sessions',
+    targetId: qrToken,
+    userId: authUser.id,
+  })
 
   return c.json({ ok: true, status: result.status })
 }

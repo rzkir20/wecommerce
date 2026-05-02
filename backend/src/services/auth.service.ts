@@ -3,6 +3,7 @@ import type { PostgrestError } from '@supabase/supabase-js'
 import { hashPassword, signAuthToken } from '../lib/auth.js'
 
 import { supabaseAdmin } from '../lib/supabase.js'
+import { writeAuditLog } from './audit-log.service.js'
 
 import type { AuthUser } from '../types/hono-env.js'
 
@@ -177,6 +178,14 @@ export async function registerUser(input: {
     return { ok: false, error: 'Gagal membuat sesi.', httpStatus: 503 }
   }
 
+  await writeAuditLog({
+    action: 'auth_register',
+    description: `Register sukses untuk ${user.email}`,
+    targetTable: 'users',
+    targetId: user.id,
+    userId: user.id,
+  })
+
   return {
     ok: true,
     user,
@@ -237,6 +246,14 @@ export async function loginUser(input: {
     console.error('[loginUser] signAuthToken', err)
     return { ok: false, error: 'Gagal membuat sesi login.', httpStatus: 503 }
   }
+
+  await writeAuditLog({
+    action: 'auth_login',
+    description: `Login sukses untuk ${user.email}`,
+    targetTable: 'users',
+    targetId: user.id,
+    userId: user.id,
+  })
 
   return {
     ok: true,
