@@ -4,6 +4,8 @@ import { setCookie } from 'hono/cookie'
 
 import { z } from 'zod'
 
+import { env } from '../config/env.js'
+
 import { AUTH_COOKIE } from '../constants/auth.js'
 
 import {
@@ -25,11 +27,23 @@ const approveQrSchema = z
   })
 
 function setSessionCookie(c: Context, token: string) {
+  const forwarded = c.req.header('x-forwarded-proto')
+  const secure =
+    (forwarded ? forwarded.split(',')[0]?.trim() === 'https' : false) ||
+    (() => {
+      try {
+        return new URL(c.req.url).protocol === 'https:'
+      } catch {
+        return false
+      }
+    })()
+
   setCookie(c, AUTH_COOKIE, token, {
     path: '/',
     httpOnly: true,
     sameSite: 'Lax',
-    secure: false,
+    secure,
+    ...(env.sessionCookieDomain ? { domain: env.sessionCookieDomain } : {}),
     maxAge: 60 * 60 * 24 * 7,
   })
 }

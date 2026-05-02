@@ -82,12 +82,6 @@ export function ScanQrDialog({ open, onOpenChange }: ScanQrDialogProps) {
         window.setTimeout(() => resolve(), 250)
       })
 
-      const cameras = await QrScanner.listCameras(true).catch(() => [])
-      const preferredCamera =
-        cameras.find((camera) =>
-          /back|rear|environment|belakang/i.test(camera.label),
-        )?.id ?? 'environment'
-
       scannerRef.current = new QrScanner(
         videoRef.current,
         (result) => {
@@ -99,7 +93,8 @@ export function ScanQrDialog({ open, onOpenChange }: ScanQrDialogProps) {
           void submitQrToken(value)
         },
         {
-          preferredCamera,
+          // Avoid calling listCameras() before start; it can create a temporary stream.
+          preferredCamera: 'environment',
           highlightScanRegion: false,
           highlightCodeOutline: false,
           returnDetailedScanResult: true,

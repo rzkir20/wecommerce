@@ -35,6 +35,14 @@ function mapUsersTableError(err: PostgrestError): { error: string; debugCode: st
       debugCode: code,
     }
   }
+  // Harus sebelum cabang "permission denied" umum (pesan ini juga mengandung kata permission).
+  if (msg.includes('permission denied for schema') || msg.includes('denied for schema public')) {
+    return {
+      error:
+        'Role API tidak punya USAGE pada schema public. Jalankan migrasi terbaru: `npx prisma migrate deploy` (DATABASE_URL = Postgres project Supabase yang sama). Atau jalankan SQL di Supabase → SQL Editor: GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;',
+      debugCode: code,
+    }
+  }
   // 42501 / "permission denied" sering dari RLS jika yang terpasang bukan service_role, atau policy memblokir.
   if (
     msg.includes('row-level security') ||
@@ -50,7 +58,7 @@ function mapUsersTableError(err: PostgrestError): { error: string; debugCode: st
   if (msg.includes('permission denied') || code === '42501') {
     return {
       error:
-        'PostgreSQL menolak akses ke tabel users (42501). Bukan hanya “salah kunci”: cek juga RLS di Table Editor, GRANT, dan bahwa Worker memakai service_role key penuh tanpa terpotong.',
+        'PostgreSQL menolak akses (42501). Cek RLS, GRANT pada tabel, dan bahwa Worker memakai **service_role** key penuh (bukan anon).',
       debugCode: code,
     }
   }
