@@ -7,17 +7,18 @@ import {
   EyeOff,
   Lock,
   Mail,
+  Phone,
   ShieldCheck,
   User,
 } from 'lucide-react'
 
 import { useMemo, useState } from 'react'
 
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '#/context/AuthContext'
 
-import { ApiError } from '../../lib/config'
+import { ApiError } from '#/lib/config'
 
-import { registerSchema } from '../../lib/validations'
+import { registerSchema } from '#/lib/validations'
 
 export const Route = createFileRoute('/(auth)/register')({
   component: RegisterPage,
@@ -28,6 +29,7 @@ function RegisterPage() {
   const { register } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -54,6 +56,7 @@ function RegisterPage() {
     const parsed = registerSchema.safeParse({
       name,
       email,
+      phone,
       password,
       confirmPassword,
     })
@@ -66,7 +69,12 @@ function RegisterPage() {
 
     setLoading(true)
     try {
-      await register(parsed.data.name, parsed.data.email, parsed.data.password)
+      await register(
+        parsed.data.name,
+        parsed.data.email,
+        parsed.data.password,
+        parsed.data.phone,
+      )
       await navigate({ to: '/' })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Registrasi gagal')
@@ -205,6 +213,32 @@ function RegisterPage() {
                     className="w-full rounded-2xl border border-border bg-muted/40 py-4 pr-4 pl-12 text-sm font-medium text-foreground transition-all placeholder:text-muted-foreground focus:border-[#d4ff3f] focus:bg-muted focus:outline-none"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="register-phone"
+                  className="px-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase"
+                >
+                  Phone
+                </label>
+                <div className="relative">
+                  <Phone className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    id="register-phone"
+                    type="tel"
+                    name="phone"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(ev) => setPhone(ev.target.value)}
+                    placeholder="+62 812 3456 7890 (opsional)"
+                    maxLength={32}
+                    className="w-full rounded-2xl border border-border bg-muted/40 py-4 pr-4 pl-12 text-sm font-medium text-foreground transition-all placeholder:text-muted-foreground focus:border-[#d4ff3f] focus:bg-muted focus:outline-none"
+                  />
+                </div>
+                <p className="px-1 text-[9px] text-muted-foreground">
+                  Kosongkan atau isi 8–15 digit (boleh +62, spasi, strip).
+                </p>
               </div>
 
               <div className="space-y-2">

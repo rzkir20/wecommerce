@@ -10,6 +10,22 @@ export const registerSchema = z
       .string()
       .trim()
       .email('Format email tidak valid'),
+    phone: z
+      .string()
+      .trim()
+      .max(32, 'Nomor telepon maksimal 32 karakter')
+      .default('')
+      .refine(
+        (s) => {
+          if (s.length === 0) return true
+          const digits = s.replace(/\D/g, '')
+          return digits.length >= 8 && digits.length <= 15
+        },
+        {
+          message:
+            'Nomor telepon berisi 8–15 digit (kosongkan jika tidak diisi)',
+        },
+      ),
     password: z
       .string()
       .min(8, 'Password minimal 8 karakter')

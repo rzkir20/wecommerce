@@ -12,6 +12,15 @@ export const API_PATHS = {
     scan: '/api/qr/scan',
     status: (qrToken: string) => `/api/qr/status/${encodeURIComponent(qrToken)}`,
   },
+  seller: {
+    applications: '/api/seller/applications',
+    applicationsMe: '/api/seller/applications/me',
+  },
+  shops: {
+    me: '/api/shops/me',
+    public: (slug: string) =>
+      `/api/shops/public/${encodeURIComponent(slug)}`,
+  },
 } as const
 
 export class ApiError extends Error {

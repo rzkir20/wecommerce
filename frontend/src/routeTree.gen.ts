@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as ProfileRouteRouteImport } from './routes/profile/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -25,6 +26,11 @@ import { Route as authChangePasswordRouteImport } from './routes/(auth)/change-p
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SlugRoute = SlugRouteImport.update({
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRouteRouteWithChildren
   '/$slug': typeof SlugRoute
+  '/portal': typeof PortalRoute
   '/products': typeof ProductsRoute
   '/change-password': typeof authChangePasswordRoute
   '/forget-password': typeof authForgetPasswordRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
+  '/portal': typeof PortalRoute
   '/products': typeof ProductsRoute
   '/change-password': typeof authChangePasswordRoute
   '/forget-password': typeof authForgetPasswordRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRouteRouteWithChildren
   '/$slug': typeof SlugRoute
+  '/portal': typeof PortalRoute
   '/products': typeof ProductsRoute
   '/(auth)/change-password': typeof authChangePasswordRoute
   '/(auth)/forget-password': typeof authForgetPasswordRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/'
     | '/profile'
     | '/$slug'
+    | '/portal'
     | '/products'
     | '/change-password'
     | '/forget-password'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$slug'
+    | '/portal'
     | '/products'
     | '/change-password'
     | '/forget-password'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
     | '/'
     | '/profile'
     | '/$slug'
+    | '/portal'
     | '/products'
     | '/(auth)/change-password'
     | '/(auth)/forget-password'
@@ -173,6 +185,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProfileRouteRoute: typeof ProfileRouteRouteWithChildren
   SlugRoute: typeof SlugRoute
+  PortalRoute: typeof PortalRoute
   ProductsRoute: typeof ProductsRoute
   authChangePasswordRoute: typeof authChangePasswordRoute
   authForgetPasswordRoute: typeof authForgetPasswordRoute
@@ -190,6 +203,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$slug': {
@@ -288,6 +308,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProfileRouteRoute: ProfileRouteRouteWithChildren,
   SlugRoute: SlugRoute,
+  PortalRoute: PortalRoute,
   ProductsRoute: ProductsRoute,
   authChangePasswordRoute: authChangePasswordRoute,
   authForgetPasswordRoute: authForgetPasswordRoute,

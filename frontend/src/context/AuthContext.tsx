@@ -13,6 +13,7 @@ export type AuthUser = {
   id: string
   email: string
   name: string
+  phone: string | null
 }
 
 type AuthProviderProps = {
@@ -28,7 +29,12 @@ type AuthState = {
 type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<void>
   refreshSession: () => Promise<AuthUser | null>
-  register: (name: string, email: string, password: string) => Promise<void>
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    phone?: string,
+  ) => Promise<void>
   logout: () => void
 }
 
@@ -88,10 +94,15 @@ export function AuthProvider({
   )
 
   const register = useCallback(
-    async (name: string, email: string, password: string) => {
+    async (
+      name: string,
+      email: string,
+      password: string,
+      phone: string = '',
+    ) => {
       const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.register, {
         method: 'POST',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, phone }),
       })
       setUser(res.user)
     },

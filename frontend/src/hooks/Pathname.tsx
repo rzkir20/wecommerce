@@ -33,6 +33,8 @@ export function PathnameLayout() {
     pathname.startsWith('/change-password') ||
     pathname.startsWith('/verifications')
 
+  const isPortalRoute = pathname.startsWith('/portal')
+
   const productSlugs = Object.keys(dashboardData.productDetails)
   const pathSlug = pathname.slice(1).split('/')[0]
   const isProductDetailPage =
@@ -58,6 +60,8 @@ export function PathnameLayout() {
             </div>
             <Outlet />
           </div>
+        ) : isPortalRoute ? (
+          <Outlet />
         ) : (
           <CartProvider initialData={dashboardData.cart}>
             <AppShell activeItem={activeItem} />
