@@ -50,14 +50,20 @@ export async function registerController(c: Context) {
   try {
     const result = await registerUser(parsed.data)
     if (!result.ok) {
-      return c.json({ error: result.error }, 409)
+      const status = (result.httpStatus ?? 409) as 409 | 503
+      return c.json({ error: result.error }, status)
     }
 
     setSessionCookie(c, result.token)
     return c.json({ user: result.user }, 201)
   } catch (err) {
     console.error('[register]', err)
-    return c.json({ error: 'Registrasi gagal diproses.' }, 503)
+    const detail =
+      env.exposeErrorDetails && err instanceof Error ? err.message : undefined
+    return c.json(
+      { error: 'Registrasi gagal diproses.', ...(detail ? { detail } : {}) },
+      503,
+    )
   }
 }
 
@@ -71,14 +77,20 @@ export async function loginController(c: Context) {
   try {
     const result = await loginUser(parsed.data)
     if (!result.ok) {
-      return c.json({ error: result.error }, 401)
+      const status = (result.httpStatus ?? 401) as 401 | 503
+      return c.json({ error: result.error }, status)
     }
 
     setSessionCookie(c, result.token)
     return c.json({ user: result.user })
   } catch (err) {
     console.error('[login]', err)
-    return c.json({ error: 'Login gagal diproses.' }, 503)
+    const detail =
+      env.exposeErrorDetails && err instanceof Error ? err.message : undefined
+    return c.json(
+      { error: 'Login gagal diproses.', ...(detail ? { detail } : {}) },
+      503,
+    )
   }
 }
 

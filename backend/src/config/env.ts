@@ -17,4 +17,6 @@ export const env = {
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
   /** Set to parent registrable domain (e.g. `.example.com`) so the session cookie is sent on both `www` and `api` subdomains. */
   sessionCookieDomain: process.env.SESSION_COOKIE_DOMAIN?.trim() || undefined,
+  /** When true, 503 responses may include a `detail` field (do not enable in public production). */
+  exposeErrorDetails: process.env.EXPOSE_ERROR_DETAILS === 'true',
 }

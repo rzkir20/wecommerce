@@ -1,8 +1,4 @@
-import { Prisma } from '@prisma/client'
-
 import { hashPassword, signAuthToken } from '../lib/auth.js'
-
-import { prisma } from '../lib/prisma.js'
 
 import { supabaseAdmin } from '../lib/supabase.js'
 
@@ -10,7 +6,7 @@ import type { AuthUser } from '../types/hono-env.js'
 
 type AuthResult =
   | { ok: true; user: AuthUser; token: string }
-  | { ok: false; error: string }
+  | { ok: false; error: string; httpStatus?: 401 | 409 | 503 }
 
 export async function registerUser(input: {
   name: string
@@ -23,10 +19,16 @@ export async function registerUser(input: {
   const phone = input.phone?.trim() ? input.phone.trim().slice(0, 32) : null
   const passwordHash = await hashPassword(input.password)
 
-  const existing = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true },
-  })
+  const { data: existing, error: existingErr } = await supabaseAdmin
+    .from('users')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle()
+
+  if (existingErr) {
+    console.error('[registerUser] users lookup', existingErr)
+    return { ok: false, error: 'Database tidak dapat diakses.', httpStatus: 503 }
+  }
 
   if (existing) {
     return { ok: false, error: 'Email sudah terdaftar' }
@@ -51,25 +53,26 @@ export async function registerUser(input: {
 
   const authUserId = authCreated.user.id
 
-  let createdUser: { id: string; name: string; email: string; phone: string | null }
-  try {
-    createdUser = await prisma.user.create({
-      data: {
-        id: authUserId,
-        name,
-        email,
-        phone,
-        password_hash: passwordHash,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
-      },
-      select: { id: true, name: true, email: true, phone: true },
+  const { data: createdUser, error: insertErr } = await supabaseAdmin
+    .from('users')
+    .insert({
+      id: authUserId,
+      name,
+      email,
+      phone,
+      password_hash: passwordHash,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
     })
-  } catch (err) {
+    .select('id, name, email, phone')
+    .single()
+
+  if (insertErr || !createdUser) {
     await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => null)
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+    if (insertErr?.code === '23505') {
       return { ok: false, error: 'Email sudah terdaftar' }
     }
-    return { ok: false, error: 'Gagal menyimpan user ke database aplikasi' }
+    console.error('[registerUser] users insert', insertErr)
+    return { ok: false, error: 'Gagal menyimpan user ke database aplikasi', httpStatus: 503 }
   }
 
   const user: AuthUser = {
@@ -79,11 +82,17 @@ export async function registerUser(input: {
     phone: createdUser.phone,
   }
 
-  const token = await signAuthToken({
-    sub: user.id,
-    name: user.name,
-    email: user.email,
-  })
+  let token: string
+  try {
+    token = await signAuthToken({
+      sub: user.id,
+      name: user.name,
+      email: user.email,
+    })
+  } catch (err) {
+    console.error('[registerUser] signAuthToken', err)
+    return { ok: false, error: 'Gagal membuat sesi.', httpStatus: 503 }
+  }
 
   return {
     ok: true,
@@ -107,13 +116,23 @@ export async function loginUser(input: {
     return { ok: false, error: 'Email atau password salah' }
   }
 
-  const userRow = await prisma.user.findUnique({
-    where: { id: supabaseUser.id },
-    select: { id: true, name: true, email: true, phone: true },
-  })
+  const { data: userRow, error: userErr } = await supabaseAdmin
+    .from('users')
+    .select('id, name, email, phone')
+    .eq('id', supabaseUser.id)
+    .maybeSingle()
+
+  if (userErr) {
+    console.error('[loginUser] users lookup', userErr)
+    return { ok: false, error: 'Database tidak dapat diakses.', httpStatus: 503 }
+  }
 
   if (!userRow) {
-    return { ok: false, error: 'Gagal mengambil profil user' }
+    return {
+      ok: false,
+      error:
+        'Akun ada di autentikasi tetapi tidak di aplikasi. Daftar dulu atau hubungi admin.',
+    }
   }
 
   const user: AuthUser = {
@@ -123,11 +142,17 @@ export async function loginUser(input: {
     phone: userRow.phone,
   }
 
-  const token = await signAuthToken({
-    sub: user.id,
-    name: user.name,
-    email: user.email,
-  })
+  let token: string
+  try {
+    token = await signAuthToken({
+      sub: user.id,
+      name: user.name,
+      email: user.email,
+    })
+  } catch (err) {
+    console.error('[loginUser] signAuthToken', err)
+    return { ok: false, error: 'Gagal membuat sesi login.', httpStatus: 503 }
+  }
 
   return {
     ok: true,
