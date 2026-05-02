@@ -102,12 +102,13 @@ export async function loginUser(input: {
     password: input.password,
   })
 
-  if (authSignInError || !authSignInData.user) {
+  const supabaseUser = authSignInData?.user
+  if (authSignInError || !supabaseUser) {
     return { ok: false, error: 'Email atau password salah' }
   }
 
   const userRow = await prisma.user.findUnique({
-    where: { id: authSignInData.user.id },
+    where: { id: supabaseUser.id },
     select: { id: true, name: true, email: true, phone: true },
   })
 
