@@ -4,6 +4,7 @@ export const API_PATHS = {
   auth: {
     login: '/api/auth/login',
     register: '/api/auth/register',
+    histories: '/api/auth/histories',
     me: '/api/auth/me',
     logout: '/api/auth/logout',
   },
