@@ -134,16 +134,6 @@ function ProfileIndexPage() {
                 <SelectBox defaultValue="1995" />
               </div>
             </div>
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
-                Bio / Description
-              </label>
-              <textarea
-                rows={4}
-                className="w-full rounded-2xl border border-border bg-background px-5 py-4 font-semibold text-foreground transition-all focus:border-[#d4ff3f] focus:ring-4 focus:ring-[#d4ff3f]/10 focus:outline-none"
-                defaultValue="Enthusiastic watch collector and digital product designer based in Jakarta."
-              />
-            </div>
           </form>
         </div>
       </div>

@@ -25,7 +25,7 @@ export const requireAuth = createMiddleware<AppBindings>(async (c, next) => {
 
   const { data: user, error } = await supabaseAdmin
     .from('users')
-    .select('id, name, email, phone')
+    .select('id, name, email, phone, role, gender, date')
     .eq('id', payload.sub)
     .maybeSingle()
 

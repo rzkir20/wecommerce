@@ -1,8 +1,8 @@
 import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 
-import { ProfileHeader } from '#/components/profile/header'
+import { SuperAdminsHeader } from '#/components/super-admins/header'
 
-import { ProfileSidebar } from '#/components/profile/sidebar'
+import { SuperAdminsSidebar } from '#/components/super-admins/sidebar'
 
 import { useAuth } from '#/context/AuthContext'
 
@@ -10,17 +10,22 @@ import { getSessionUser } from '#/hooks/root-bootstrap'
 
 import { useTheme } from '#/context/theme-provider'
 
-export const Route = createFileRoute('/profile')({
+import { getRoleHomePath } from '#/lib/role-proxy'
+
+export const Route = createFileRoute('/super-admins')({
   beforeLoad: async () => {
     const user = await getSessionUser()
     if (!user) {
       throw redirect({ to: '/login' })
     }
+    if (user.role !== 'super_admins') {
+      throw redirect({ to: getRoleHomePath(user.role), replace: true })
+    }
   },
-  component: ProfileLayoutRoute,
+  component: RouteComponent,
 })
 
-function ProfileLayoutRoute() {
+function RouteComponent() {
   const { user } = useAuth()
   const { theme } = useTheme()
 
@@ -30,17 +35,17 @@ function ProfileLayoutRoute() {
       data-theme={theme}
     >
       <div className="lg:pl-80">
-        <div className="fixed top-0 left-0 z-50 hidden h-screen w-80 border-r border-border bg-background lg:block">
+        <div className="fixed top-0 left-0 z-40 hidden h-screen w-80 border-r border-border bg-background lg:block">
           <div className="h-full overflow-hidden px-5 py-6">
-            <ProfileSidebar />
+            <SuperAdminsSidebar />
           </div>
         </div>
 
-        <ProfileHeader userName={user?.name} userEmail={user?.email} />
+        <SuperAdminsHeader userName={user?.name} userEmail={user?.email} />
 
         <main className="mx-auto w-full max-w-[1600px] px-6 py-10 lg:px-8">
           <div className="mb-8 lg:hidden">
-            <ProfileSidebar />
+            <SuperAdminsSidebar />
           </div>
           <section className="flex-1">
             <Outlet />

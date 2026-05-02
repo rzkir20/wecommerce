@@ -9,11 +9,14 @@ import {
 
 import { API_PATHS, apiJson } from '../lib/config'
 
+import type { UserRole } from '../lib/role-proxy'
+
 export type AuthUser = {
   id: string
   email: string
   name: string
   phone: string | null
+  role?: UserRole
 }
 
 type AuthProviderProps = {
@@ -44,10 +47,7 @@ export function avatarUrlForEmail(email: string): string {
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`
 }
 
-export function AuthProvider({
-  children,
-  initialUser,
-}: AuthProviderProps) {
+export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   /** Optimistic SSR hint; canonical session lives on API cookie (often another origin). */
   const [user, setUser] = useState<AuthUser | null>(initialUser ?? null)
   const [ready, setReady] = useState(false)
@@ -76,22 +76,21 @@ export function AuthProvider({
   }, [refreshSession])
 
   const logout = useCallback(() => {
-    void apiJson<{ ok: boolean }>(API_PATHS.auth.logout, { method: 'POST' }).catch(() => {
+    void apiJson<{ ok: boolean }>(API_PATHS.auth.logout, {
+      method: 'POST',
+    }).catch(() => {
       // Tetap clear local state walau request logout gagal.
     })
     setUser(null)
   }, [])
 
-  const login = useCallback(
-    async (email: string, password: string) => {
-      const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.login, {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      })
-      setUser(res.user)
-    },
-    [],
-  )
+  const login = useCallback(async (email: string, password: string) => {
+    const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.login, {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    })
+    setUser(res.user)
+  }, [])
 
   const register = useCallback(
     async (

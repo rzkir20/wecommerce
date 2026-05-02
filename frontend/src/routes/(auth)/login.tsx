@@ -51,7 +51,7 @@ function LoginPage() {
     setLoading(true)
     try {
       await login(parsed.data.email, parsed.data.password)
-      await navigate({ to: '/' })
+      await navigate({ to: '/proxy', replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Login gagal')
     } finally {
@@ -98,7 +98,7 @@ function LoginPage() {
           setQrStatus('approved')
           const me = await refreshSession()
           if (me) {
-            void navigate({ to: '/', replace: true })
+            void navigate({ to: '/proxy', replace: true })
             return
           }
           setError(

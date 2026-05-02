@@ -9,6 +9,7 @@ datasource db {
 
 enum UserRole {
   super_admins
+  admins
   affiliate
   users
   seller
@@ -31,6 +32,8 @@ model User {
   name                String               @db.VarChar(255)
   avatar              String?              @db.VarChar(512)
   phone               String?              @db.VarChar(32)
+  gender              String?              @db.VarChar(32)
+  date                DateTime?            @db.Date
   role                UserRole             @default(users)
   is_verified         Boolean              @default(false)
   password_hash       String               @db.VarChar(255)

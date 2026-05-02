@@ -97,10 +97,14 @@ export async function registerUser(input: {
   email: string
   phone?: string
   password: string
+  gender?: string
+  date?: string
 }): Promise<AuthResult> {
   const name = input.name.trim()
   const email = input.email.trim().toLowerCase()
   const phone = input.phone?.trim() ? input.phone.trim().slice(0, 32) : null
+  const gender = input.gender?.trim() ? input.gender.trim().slice(0, 32) : null
+  const date = input.date?.trim() ? input.date.trim().slice(0, 32) : null
   const passwordHash = await hashPassword(input.password)
 
   const { data: existing, error: existingErr } = await supabaseAdmin
@@ -145,10 +149,12 @@ export async function registerUser(input: {
       name,
       email,
       phone,
+      gender,
+      date,
       password_hash: passwordHash,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
     })
-    .select('id, name, email, phone')
+    .select('id, name, email, phone, role, gender, date')
     .single()
 
   if (insertErr || !createdUser) {
@@ -169,6 +175,9 @@ export async function registerUser(input: {
     name: createdUser.name,
     email: createdUser.email,
     phone: createdUser.phone,
+    role: createdUser.role,
+    gender: createdUser.gender,
+    date: createdUser.date,
   }
 
   let token: string
@@ -225,7 +234,7 @@ export async function loginUser(input: {
 
   const { data: userRow, error: userErr } = await supabaseAdmin
     .from('users')
-    .select('id, name, email, phone')
+    .select('id, name, email, phone, role, gender, date')
     .eq('id', supabaseUser.id)
     .maybeSingle()
 
@@ -248,6 +257,9 @@ export async function loginUser(input: {
     name: userRow.name,
     email: userRow.email,
     phone: userRow.phone,
+    role: userRow.role,
+    gender: userRow.gender,
+    date: userRow.date,
   }
 
   let token: string

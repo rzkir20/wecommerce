@@ -9,12 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProxyRouteImport } from './routes/proxy'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as SlugRouteImport } from './routes/$slug'
+import { Route as SuperAdminsRouteRouteImport } from './routes/super-admins/route'
+import { Route as SellerRouteRouteImport } from './routes/seller/route'
 import { Route as ProfileRouteRouteImport } from './routes/profile/route'
+import { Route as AdminsRouteRouteImport } from './routes/admins/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SuperAdminsIndexRouteImport } from './routes/super-admins/index'
+import { Route as SellerIndexRouteImport } from './routes/seller/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
+import { Route as AdminsIndexRouteImport } from './routes/admins/index'
 import { Route as ordersCheckoutRouteImport } from './routes/(orders)/checkout'
 import { Route as ordersCartRouteImport } from './routes/(orders)/cart'
 import { Route as authVerificationsRouteImport } from './routes/(auth)/verifications'
@@ -23,6 +30,11 @@ import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as authForgetPasswordRouteImport } from './routes/(auth)/forget-password'
 import { Route as authChangePasswordRouteImport } from './routes/(auth)/change-password'
 
+const ProxyRoute = ProxyRouteImport.update({
+  id: '/proxy',
+  path: '/proxy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -38,9 +50,24 @@ const SlugRoute = SlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuperAdminsRouteRoute = SuperAdminsRouteRouteImport.update({
+  id: '/super-admins',
+  path: '/super-admins',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SellerRouteRoute = SellerRouteRouteImport.update({
+  id: '/seller',
+  path: '/seller',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRouteRoute = ProfileRouteRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminsRouteRoute = AdminsRouteRouteImport.update({
+  id: '/admins',
+  path: '/admins',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -48,10 +75,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuperAdminsIndexRoute = SuperAdminsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SuperAdminsRouteRoute,
+} as any)
+const SellerIndexRoute = SellerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SellerRouteRoute,
+} as any)
 const ProfileIndexRoute = ProfileIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ProfileRouteRoute,
+} as any)
+const AdminsIndexRoute = AdminsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminsRouteRoute,
 } as any)
 const ordersCheckoutRoute = ordersCheckoutRouteImport.update({
   id: '/(orders)/checkout',
@@ -91,10 +133,14 @@ const authChangePasswordRoute = authChangePasswordRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admins': typeof AdminsRouteRouteWithChildren
   '/profile': typeof ProfileRouteRouteWithChildren
+  '/seller': typeof SellerRouteRouteWithChildren
+  '/super-admins': typeof SuperAdminsRouteRouteWithChildren
   '/$slug': typeof SlugRoute
   '/portal': typeof PortalRoute
   '/products': typeof ProductsRoute
+  '/proxy': typeof ProxyRoute
   '/change-password': typeof authChangePasswordRoute
   '/forget-password': typeof authForgetPasswordRoute
   '/login': typeof authLoginRoute
@@ -102,13 +148,17 @@ export interface FileRoutesByFullPath {
   '/verifications': typeof authVerificationsRoute
   '/cart': typeof ordersCartRoute
   '/checkout': typeof ordersCheckoutRoute
+  '/admins/': typeof AdminsIndexRoute
   '/profile/': typeof ProfileIndexRoute
+  '/seller/': typeof SellerIndexRoute
+  '/super-admins/': typeof SuperAdminsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
   '/portal': typeof PortalRoute
   '/products': typeof ProductsRoute
+  '/proxy': typeof ProxyRoute
   '/change-password': typeof authChangePasswordRoute
   '/forget-password': typeof authForgetPasswordRoute
   '/login': typeof authLoginRoute
@@ -116,15 +166,22 @@ export interface FileRoutesByTo {
   '/verifications': typeof authVerificationsRoute
   '/cart': typeof ordersCartRoute
   '/checkout': typeof ordersCheckoutRoute
+  '/admins': typeof AdminsIndexRoute
   '/profile': typeof ProfileIndexRoute
+  '/seller': typeof SellerIndexRoute
+  '/super-admins': typeof SuperAdminsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admins': typeof AdminsRouteRouteWithChildren
   '/profile': typeof ProfileRouteRouteWithChildren
+  '/seller': typeof SellerRouteRouteWithChildren
+  '/super-admins': typeof SuperAdminsRouteRouteWithChildren
   '/$slug': typeof SlugRoute
   '/portal': typeof PortalRoute
   '/products': typeof ProductsRoute
+  '/proxy': typeof ProxyRoute
   '/(auth)/change-password': typeof authChangePasswordRoute
   '/(auth)/forget-password': typeof authForgetPasswordRoute
   '/(auth)/login': typeof authLoginRoute
@@ -132,16 +189,23 @@ export interface FileRoutesById {
   '/(auth)/verifications': typeof authVerificationsRoute
   '/(orders)/cart': typeof ordersCartRoute
   '/(orders)/checkout': typeof ordersCheckoutRoute
+  '/admins/': typeof AdminsIndexRoute
   '/profile/': typeof ProfileIndexRoute
+  '/seller/': typeof SellerIndexRoute
+  '/super-admins/': typeof SuperAdminsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admins'
     | '/profile'
+    | '/seller'
+    | '/super-admins'
     | '/$slug'
     | '/portal'
     | '/products'
+    | '/proxy'
     | '/change-password'
     | '/forget-password'
     | '/login'
@@ -149,13 +213,17 @@ export interface FileRouteTypes {
     | '/verifications'
     | '/cart'
     | '/checkout'
+    | '/admins/'
     | '/profile/'
+    | '/seller/'
+    | '/super-admins/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/$slug'
     | '/portal'
     | '/products'
+    | '/proxy'
     | '/change-password'
     | '/forget-password'
     | '/login'
@@ -163,14 +231,21 @@ export interface FileRouteTypes {
     | '/verifications'
     | '/cart'
     | '/checkout'
+    | '/admins'
     | '/profile'
+    | '/seller'
+    | '/super-admins'
   id:
     | '__root__'
     | '/'
+    | '/admins'
     | '/profile'
+    | '/seller'
+    | '/super-admins'
     | '/$slug'
     | '/portal'
     | '/products'
+    | '/proxy'
     | '/(auth)/change-password'
     | '/(auth)/forget-password'
     | '/(auth)/login'
@@ -178,15 +253,22 @@ export interface FileRouteTypes {
     | '/(auth)/verifications'
     | '/(orders)/cart'
     | '/(orders)/checkout'
+    | '/admins/'
     | '/profile/'
+    | '/seller/'
+    | '/super-admins/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminsRouteRoute: typeof AdminsRouteRouteWithChildren
   ProfileRouteRoute: typeof ProfileRouteRouteWithChildren
+  SellerRouteRoute: typeof SellerRouteRouteWithChildren
+  SuperAdminsRouteRoute: typeof SuperAdminsRouteRouteWithChildren
   SlugRoute: typeof SlugRoute
   PortalRoute: typeof PortalRoute
   ProductsRoute: typeof ProductsRoute
+  ProxyRoute: typeof ProxyRoute
   authChangePasswordRoute: typeof authChangePasswordRoute
   authForgetPasswordRoute: typeof authForgetPasswordRoute
   authLoginRoute: typeof authLoginRoute
@@ -198,6 +280,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/proxy': {
+      id: '/proxy'
+      path: '/proxy'
+      fullPath: '/proxy'
+      preLoaderRoute: typeof ProxyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/products': {
       id: '/products'
       path: '/products'
@@ -219,11 +308,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/super-admins': {
+      id: '/super-admins'
+      path: '/super-admins'
+      fullPath: '/super-admins'
+      preLoaderRoute: typeof SuperAdminsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/seller': {
+      id: '/seller'
+      path: '/seller'
+      fullPath: '/seller'
+      preLoaderRoute: typeof SellerRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admins': {
+      id: '/admins'
+      path: '/admins'
+      fullPath: '/admins'
+      preLoaderRoute: typeof AdminsRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -233,12 +343,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/super-admins/': {
+      id: '/super-admins/'
+      path: '/'
+      fullPath: '/super-admins/'
+      preLoaderRoute: typeof SuperAdminsIndexRouteImport
+      parentRoute: typeof SuperAdminsRouteRoute
+    }
+    '/seller/': {
+      id: '/seller/'
+      path: '/'
+      fullPath: '/seller/'
+      preLoaderRoute: typeof SellerIndexRouteImport
+      parentRoute: typeof SellerRouteRoute
+    }
     '/profile/': {
       id: '/profile/'
       path: '/'
       fullPath: '/profile/'
       preLoaderRoute: typeof ProfileIndexRouteImport
       parentRoute: typeof ProfileRouteRoute
+    }
+    '/admins/': {
+      id: '/admins/'
+      path: '/'
+      fullPath: '/admins/'
+      preLoaderRoute: typeof AdminsIndexRouteImport
+      parentRoute: typeof AdminsRouteRoute
     }
     '/(orders)/checkout': {
       id: '/(orders)/checkout'
@@ -292,6 +423,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminsRouteRouteChildren {
+  AdminsIndexRoute: typeof AdminsIndexRoute
+}
+
+const AdminsRouteRouteChildren: AdminsRouteRouteChildren = {
+  AdminsIndexRoute: AdminsIndexRoute,
+}
+
+const AdminsRouteRouteWithChildren = AdminsRouteRoute._addFileChildren(
+  AdminsRouteRouteChildren,
+)
+
 interface ProfileRouteRouteChildren {
   ProfileIndexRoute: typeof ProfileIndexRoute
 }
@@ -304,12 +447,39 @@ const ProfileRouteRouteWithChildren = ProfileRouteRoute._addFileChildren(
   ProfileRouteRouteChildren,
 )
 
+interface SellerRouteRouteChildren {
+  SellerIndexRoute: typeof SellerIndexRoute
+}
+
+const SellerRouteRouteChildren: SellerRouteRouteChildren = {
+  SellerIndexRoute: SellerIndexRoute,
+}
+
+const SellerRouteRouteWithChildren = SellerRouteRoute._addFileChildren(
+  SellerRouteRouteChildren,
+)
+
+interface SuperAdminsRouteRouteChildren {
+  SuperAdminsIndexRoute: typeof SuperAdminsIndexRoute
+}
+
+const SuperAdminsRouteRouteChildren: SuperAdminsRouteRouteChildren = {
+  SuperAdminsIndexRoute: SuperAdminsIndexRoute,
+}
+
+const SuperAdminsRouteRouteWithChildren =
+  SuperAdminsRouteRoute._addFileChildren(SuperAdminsRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminsRouteRoute: AdminsRouteRouteWithChildren,
   ProfileRouteRoute: ProfileRouteRouteWithChildren,
+  SellerRouteRoute: SellerRouteRouteWithChildren,
+  SuperAdminsRouteRoute: SuperAdminsRouteRouteWithChildren,
   SlugRoute: SlugRoute,
   PortalRoute: PortalRoute,
   ProductsRoute: ProductsRoute,
+  ProxyRoute: ProxyRoute,
   authChangePasswordRoute: authChangePasswordRoute,
   authForgetPasswordRoute: authForgetPasswordRoute,
   authLoginRoute: authLoginRoute,
