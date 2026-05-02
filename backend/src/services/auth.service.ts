@@ -1,6 +1,11 @@
-import { supabaseAdmin } from '../lib/supabase.js'
+import { Prisma } from '@prisma/client'
 
 import { hashPassword, signAuthToken } from '../lib/auth.js'
+
+import { prisma } from '../lib/prisma.js'
+
+import { supabaseAdmin } from '../lib/supabase.js'
+
 import type { AuthUser } from '../types/hono-env.js'
 
 type AuthResult =
@@ -10,23 +15,20 @@ type AuthResult =
 export async function registerUser(input: {
   name: string
   email: string
+  phone?: string
   password: string
 }): Promise<AuthResult> {
   const name = input.name.trim()
   const email = input.email.trim().toLowerCase()
+  const phone = input.phone?.trim() ? input.phone.trim().slice(0, 32) : null
   const passwordHash = await hashPassword(input.password)
 
-  const { data: existingUser, error: existingUserError } = await supabaseAdmin
-    .from('users')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle()
+  const existing = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
+  })
 
-  if (existingUserError) {
-    return { ok: false, error: 'Gagal memeriksa email user' }
-  }
-
-  if (existingUser) {
+  if (existing) {
     return { ok: false, error: 'Email sudah terdaftar' }
   }
 
@@ -36,6 +38,7 @@ export async function registerUser(input: {
     email_confirm: true,
     user_metadata: {
       name,
+      ...(phone ? { phone } : {}),
     },
   })
 
@@ -48,21 +51,24 @@ export async function registerUser(input: {
 
   const authUserId = authCreated.user.id
 
-  const { data: createdUser, error: createUserError } = await supabaseAdmin
-    .from('users')
-    .insert({
-      id: authUserId,
-      name,
-      email,
-      password_hash: passwordHash,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
+  let createdUser: { id: string; name: string; email: string; phone: string | null }
+  try {
+    createdUser = await prisma.user.create({
+      data: {
+        id: authUserId,
+        name,
+        email,
+        phone,
+        password_hash: passwordHash,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
+      },
+      select: { id: true, name: true, email: true, phone: true },
     })
-    .select('id, name, email')
-    .single()
-
-  if (createUserError || !createdUser) {
-    // Keep Supabase Auth and app table in sync if DB insert fails.
+  } catch (err) {
     await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => null)
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return { ok: false, error: 'Email sudah terdaftar' }
+    }
     return { ok: false, error: 'Gagal menyimpan user ke database aplikasi' }
   }
 
@@ -70,6 +76,7 @@ export async function registerUser(input: {
     id: createdUser.id,
     name: createdUser.name,
     email: createdUser.email,
+    phone: createdUser.phone,
   }
 
   const token = await signAuthToken({
@@ -99,20 +106,20 @@ export async function loginUser(input: {
     return { ok: false, error: 'Email atau password salah' }
   }
 
-  const { data: userRow, error: userRowError } = await supabaseAdmin
-    .from('users')
-    .select('id, name, email')
-    .eq('id', authSignInData.user.id)
-    .maybeSingle()
+  const userRow = await prisma.user.findUnique({
+    where: { id: authSignInData.user.id },
+    select: { id: true, name: true, email: true, phone: true },
+  })
 
-  if (userRowError) {
+  if (!userRow) {
     return { ok: false, error: 'Gagal mengambil profil user' }
   }
 
   const user: AuthUser = {
-    id: authSignInData.user.id,
-    name: userRow?.name ?? authSignInData.user.user_metadata?.name ?? email.split('@')[0] ?? 'User',
-    email: userRow?.email ?? authSignInData.user.email ?? email,
+    id: userRow.id,
+    name: userRow.name,
+    email: userRow.email,
+    phone: userRow.phone,
   }
 
   const token = await signAuthToken({

@@ -9,6 +9,10 @@ import { healthRoutes } from './routes/health.routes.js'
 
 import { qrRoutes } from './routes/qr.routes.js'
 
+import { sellerRoutes } from './routes/seller.routes.js'
+
+import { shopsRoutes } from './routes/shops.routes.js'
+
 import type { AppBindings } from './types/hono-env.js'
 
 export const app = new Hono<AppBindings>()
@@ -37,3 +41,5 @@ app.use(
 app.route('/', healthRoutes)
 app.route('/api/auth', authRoutes)
 app.route('/api/qr', qrRoutes)
+app.route('/api/seller', sellerRoutes)
+app.route('/api/shops', shopsRoutes)

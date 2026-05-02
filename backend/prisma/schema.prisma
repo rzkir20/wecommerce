@@ -14,19 +14,61 @@ enum UserRole {
   seller
 }
 
+enum SellerApplicationStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ShopStatus {
+  active
+  suspended
+}
+
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
-  email        String   @unique @db.VarChar(255)
-  name         String   @db.VarChar(255)
-  avatar       String?  @db.VarChar(512)
-  phone        String?  @db.VarChar(32)
-  role         UserRole @default(users)
-  is_verified  Boolean  @default(false)
-  password_hash String  @db.VarChar(255)
-  created_at   DateTime @default(now()) @db.Timestamptz(6)
-  logs         Log[]
+  id                  String               @id @default(uuid()) @db.Uuid
+  email               String               @unique @db.VarChar(255)
+  name                String               @db.VarChar(255)
+  avatar              String?              @db.VarChar(512)
+  phone               String?              @db.VarChar(32)
+  role                UserRole             @default(users)
+  is_verified         Boolean              @default(false)
+  password_hash       String               @db.VarChar(255)
+  created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  logs                Log[]
+  seller_applications SellerApplication[]
+  shops               Shop[]
 
   @@map("users")
+}
+
+model SellerApplication {
+  id               String                  @id @default(uuid()) @db.Uuid
+  user_id          String                  @db.Uuid
+  store_name       String                  @db.VarChar(255)
+  ktp_number       String                  @db.VarChar(32)
+  ktp_image        String                  @db.VarChar(512)
+  selfie_ktp       String                  @db.VarChar(512)
+  status           SellerApplicationStatus @default(pending)
+  rejection_reason String?                 @db.VarChar(1000)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([user_id], map: "idx_seller_applications_user_id")
+  @@map("seller_applications")
+}
+
+model Shop {
+  id          String     @id @default(uuid()) @db.Uuid
+  user_id     String     @unique @db.Uuid
+  name        String     @db.VarChar(255)
+  slug        String     @unique @db.VarChar(255)
+  description String?    @db.Text
+  status      ShopStatus @default(active)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("shops")
 }
 
 model Log {
