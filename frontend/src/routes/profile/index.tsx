@@ -26,7 +26,14 @@ import { avatarUrlForEmail, useAuth } from '#/context/AuthContext'
 import { ApiError } from '#/lib/config'
 
 import { Button } from '#/components/ui/button'
+
+import { Field } from '#/components/ui/field'
+
 import { Input } from '#/components/ui/input'
+
+import { Select } from '#/components/ui/select'
+
+import { Skeleton } from '#/components/ui/skeleton'
 
 import { authMeQueryOptions } from '#/service/auth.service'
 
@@ -49,6 +56,84 @@ function ProfileRetryPanel({
       <Button type="button" variant="ctaRose" onClick={onRetry}>
         {retryLabel}
       </Button>
+    </div>
+  )
+}
+
+/** Skeleton mirrors loaded profile layout: hero + form grid + bottom cards */
+function ProfilePageSkeleton() {
+  return (
+    <div aria-busy="true" aria-live="polite" className="space-y-0">
+      <span className="sr-only">Memuat profil…</span>
+      <div className="overflow-hidden rounded-[40px] border border-border bg-card shadow-sm">
+        <div className="relative h-48 bg-linear-to-r from-[#d4ff3f]/20 via-white to-rose-600/10">
+          <div className="absolute -bottom-16 left-12 flex items-end gap-6">
+            <div className="relative">
+              <div className="h-32 w-32 rounded-3xl bg-white p-1 shadow-xl ring-4 ring-white/50">
+                <Skeleton className="h-full w-full rounded-2xl" />
+              </div>
+              <Skeleton className="-right-2 -bottom-2 absolute flex h-8 w-8 rounded-xl border-2 border-white bg-muted" />
+            </div>
+            <div className="mb-4 flex min-w-0 flex-1 flex-col gap-3">
+              <Skeleton className="h-9 w-[min(18rem,60vw)] max-w-full rounded-xl" />
+              <Skeleton className="h-5 w-[min(22rem,70vw)] max-w-full rounded-lg" />
+            </div>
+          </div>
+        </div>
+
+        <div className="px-8 pt-24 pb-12 lg:px-12 lg:pb-16">
+          <div className="mb-12 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex max-w-lg flex-col gap-2">
+              <Skeleton className="h-7 w-52 rounded-xl" />
+              <Skeleton className="h-4 w-full rounded-lg md:w-96" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-11 w-23 rounded-4xl" />
+              <Skeleton className="h-11 w-32 rounded-4xl" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+            {[0, 1, 2].map((key) => (
+              <div key={key} className="space-y-1.5">
+                <Skeleton className="h-3 w-24 rounded-md" />
+                <Skeleton className="min-h-[52px] w-full rounded-2xl" />
+              </div>
+            ))}
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-16 rounded-md" />
+              <Skeleton className="h-[60px] w-full rounded-2xl" />
+            </div>
+            <div className="space-y-1.5 md:col-span-2">
+              <Skeleton className="h-3 w-28 rounded-md" />
+              <div className="grid grid-cols-3 gap-4">
+                <Skeleton className="min-h-[52px] rounded-2xl" />
+                <Skeleton className="min-h-[52px] rounded-2xl" />
+                <Skeleton className="min-h-[52px] rounded-2xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2">
+        {[0, 1].map((key) => (
+          <div
+            key={key}
+            className="flex gap-5 rounded-[32px] border border-border bg-card p-8 shadow-sm"
+          >
+            <Skeleton className="size-14 shrink-0 rounded-2xl" />
+            <div className="flex min-w-0 flex-1 flex-col gap-4">
+              <Skeleton className="h-5 w-40 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-full rounded-md" />
+                <Skeleton className="h-3 w-11/12 max-w-sm rounded-md" />
+              </div>
+              <Skeleton className="h-10 w-28 rounded-4xl" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -170,11 +255,7 @@ function ProfileIndexPage() {
   }, [dirtyDraft, baseline])
 
   if (profileQuery.status === 'pending') {
-    return (
-      <div className="flex min-h-[280px] items-center justify-center rounded-[40px] border border-border bg-card text-muted-foreground">
-        Memuat profil…
-      </div>
-    )
+    return <ProfilePageSkeleton />
   }
 
   if (profileQuery.isError) {
@@ -420,23 +501,29 @@ function ProfileIndexPage() {
                 Date of Birth
               </span>
               <div className="grid grid-cols-3 gap-4">
-                <SelectField
+                <Select
                   value={profileDraft.dobDay}
                   placeholder="Day"
                   options={DAY_OPTIONS}
-                  onChange={(v) => patchDraft((d) => ({ ...d, dobDay: v }))}
+                  onChange={(ev) =>
+                    patchDraft((d) => ({ ...d, dobDay: ev.target.value }))
+                  }
                 />
-                <SelectField
+                <Select
                   value={profileDraft.dobMonth}
                   placeholder="Month"
                   options={MONTH_OPTIONS}
-                  onChange={(v) => patchDraft((d) => ({ ...d, dobMonth: v }))}
+                  onChange={(ev) =>
+                    patchDraft((d) => ({ ...d, dobMonth: ev.target.value }))
+                  }
                 />
-                <SelectField
+                <Select
                   value={profileDraft.dobYear}
                   placeholder="Year"
                   options={YEAR_OPTIONS}
-                  onChange={(v) => patchDraft((d) => ({ ...d, dobYear: v }))}
+                  onChange={(ev) =>
+                    patchDraft((d) => ({ ...d, dobYear: ev.target.value }))
+                  }
                 />
               </div>
             </div>
@@ -467,57 +554,6 @@ function ProfileIndexPage() {
         />
       </div>
     </>
-  )
-}
-
-function Field({
-  label,
-  icon,
-  children,
-}: {
-  label: string
-  icon: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <div className="group space-y-1.5">
-      <label className="text-[11px] font-black tracking-widest text-muted-foreground transition-colors group-focus-within:text-foreground uppercase">
-        {label}
-      </label>
-      <div className="relative flex items-center">
-        {children}
-        <div className="pointer-events-none absolute right-5 text-muted-foreground/60 transition-colors group-focus-within:text-foreground">
-          {icon}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SelectField({
-  value,
-  placeholder,
-  options,
-  onChange,
-}: {
-  value: string
-  placeholder: string
-  options: { value: string; label: string }[]
-  onChange: (v: string) => void
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full cursor-pointer appearance-none rounded-2xl border border-border bg-background px-5 py-4 font-bold text-foreground transition-all focus:border-[#d4ff3f] focus:ring-4 focus:ring-[#d4ff3f]/10 focus:outline-none"
-    >
-      <option value="">{placeholder}</option>
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
   )
 }
 

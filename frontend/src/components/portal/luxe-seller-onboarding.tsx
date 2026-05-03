@@ -4,19 +4,20 @@ import {
   AlertCircle,
   ArrowRight,
   Bell,
+  Building2,
   Camera,
   Check,
-  ChevronDown,
   CreditCard,
   FileText,
+  Landmark,
   LayoutGrid,
   LogOut,
+  MapPin,
   Package,
   Search,
   Settings,
   ShoppingBag,
   Store,
-  Tag,
   TrendingUp,
   UploadCloud,
   Users,
@@ -45,20 +46,29 @@ import { toast } from 'sonner'
 
 const DRAFT_KEY = 'wecommerce-luxe-seller-draft'
 
-const BUSINESS_CATEGORIES = [
-  'Luxury Watches',
-  'Fine Jewelry',
-  'Haute Couture',
-  'Rare Spirits',
-] as const
-
 type SellerApplicationRow = {
   id: string
   user_id: string
+  business_type: 'perorangan' | 'perusahaan'
   store_name: string
-  ktp_number: string
-  ktp_image: string
-  selfie_ktp: string
+  store_description: string | null
+  full_name: string | null
+  ktp_number: string | null
+  ktp_image: string | null
+  selfie_ktp: string | null
+  company_name: string | null
+  company_address: string | null
+  bank_name: string | null
+  bank_account_no: string | null
+  has_nib: boolean
+  nib_number: string | null
+  nib_image: string | null
+  has_npwp: boolean
+  npwp_number: string | null
+  npwp_image: string | null
+  has_deed: boolean
+  deed_image: string | null
+  supporting_doc: string | null
   status: 'pending' | 'approved' | 'rejected'
   rejection_reason: string | null
 }
@@ -73,12 +83,26 @@ type ShopRow = {
 }
 
 type DraftShape = {
+  businessType: 'perorangan' | 'perusahaan'
   storeName: string
-  category: string
+  fullName: string
   description: string
   ktpNumber: string
   ktpImageUrl: string
   selfieKtpUrl: string
+  companyName: string
+  companyAddress: string
+  bankName: string
+  bankAccountNo: string
+  hasNib: boolean
+  nibNumber: string
+  nibImageUrl: string
+  hasNpwp: boolean
+  npwpNumber: string
+  npwpImageUrl: string
+  hasDeed: boolean
+  deedImageUrl: string
+  supportingDocUrl: string
 }
 
 const neon = '#d4ff3f'
@@ -95,16 +119,31 @@ export function LuxeSellerOnboardingPage() {
   const [loadingState, setLoadingState] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
-  const [storeName, setStoreName] = useState('')
-  const [category, setCategory] = useState<(typeof BUSINESS_CATEGORIES)[number]>(
-    BUSINESS_CATEGORIES[0],
+  const [businessType, setBusinessType] = useState<'perorangan' | 'perusahaan'>(
+    'perorangan',
   )
+  const [storeName, setStoreName] = useState('')
+  const [fullName, setFullName] = useState('')
   const [description, setDescription] = useState('')
   const [ktpNumber, setKtpNumber] = useState('')
   const [ktpImageUrl, setKtpImageUrl] = useState('')
   const [selfieKtpUrl, setSelfieKtpUrl] = useState('')
+  const [companyName, setCompanyName] = useState('')
+  const [companyAddress, setCompanyAddress] = useState('')
+  const [bankName, setBankName] = useState('')
+  const [bankAccountNo, setBankAccountNo] = useState('')
+  const [hasNib, setHasNib] = useState(false)
+  const [nibNumber, setNibNumber] = useState('')
+  const [nibImageUrl, setNibImageUrl] = useState('')
+  const [hasNpwp, setHasNpwp] = useState(false)
+  const [npwpNumber, setNpwpNumber] = useState('')
+  const [npwpImageUrl, setNpwpImageUrl] = useState('')
+  const [hasDeed, setHasDeed] = useState(false)
+  const [deedImageUrl, setDeedImageUrl] = useState('')
+  const [supportingDocUrl, setSupportingDocUrl] = useState('')
   const [ktpPreview, setKtpPreview] = useState<string | null>(null)
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null)
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null)
 
   const ktpFileRef = useRef<HTMLInputElement>(null)
   const selfieFileRef = useRef<HTMLInputElement>(null)
@@ -148,14 +187,29 @@ export function LuxeSellerOnboardingPage() {
     try {
       const raw = localStorage.getItem(DRAFT_KEY)
       if (!raw) return
-      const d = JSON.parse(raw) as DraftShape
+      const d = JSON.parse(raw) as Partial<DraftShape>
+      if (d.businessType === 'perorangan' || d.businessType === 'perusahaan') {
+        setBusinessType(d.businessType)
+      }
       if (d.storeName) setStoreName(d.storeName)
-      if (d.category && BUSINESS_CATEGORIES.includes(d.category as never))
-        setCategory(d.category as (typeof BUSINESS_CATEGORIES)[number])
+      if (typeof d.fullName === 'string') setFullName(d.fullName)
       if (typeof d.description === 'string') setDescription(d.description)
       if (d.ktpNumber) setKtpNumber(d.ktpNumber)
       if (d.ktpImageUrl) setKtpImageUrl(d.ktpImageUrl)
       if (d.selfieKtpUrl) setSelfieKtpUrl(d.selfieKtpUrl)
+      if (typeof d.companyName === 'string') setCompanyName(d.companyName)
+      if (typeof d.companyAddress === 'string') setCompanyAddress(d.companyAddress)
+      if (typeof d.bankName === 'string') setBankName(d.bankName)
+      if (typeof d.bankAccountNo === 'string') setBankAccountNo(d.bankAccountNo)
+      if (typeof d.hasNib === 'boolean') setHasNib(d.hasNib)
+      if (typeof d.nibNumber === 'string') setNibNumber(d.nibNumber)
+      if (typeof d.nibImageUrl === 'string') setNibImageUrl(d.nibImageUrl)
+      if (typeof d.hasNpwp === 'boolean') setHasNpwp(d.hasNpwp)
+      if (typeof d.npwpNumber === 'string') setNpwpNumber(d.npwpNumber)
+      if (typeof d.npwpImageUrl === 'string') setNpwpImageUrl(d.npwpImageUrl)
+      if (typeof d.hasDeed === 'boolean') setHasDeed(d.hasDeed)
+      if (typeof d.deedImageUrl === 'string') setDeedImageUrl(d.deedImageUrl)
+      if (typeof d.supportingDocUrl === 'string') setSupportingDocUrl(d.supportingDocUrl)
     } catch {
       /* ignore */
     }
@@ -175,12 +229,26 @@ export function LuxeSellerOnboardingPage() {
 
   function persistDraft() {
     const draft: DraftShape = {
+      businessType,
       storeName,
-      category,
+      fullName,
       description,
       ktpNumber,
       ktpImageUrl,
       selfieKtpUrl,
+      companyName,
+      companyAddress,
+      bankName,
+      bankAccountNo,
+      hasNib,
+      nibNumber,
+      nibImageUrl,
+      hasNpwp,
+      npwpNumber,
+      npwpImageUrl,
+      hasDeed,
+      deedImageUrl,
+      supportingDocUrl,
     }
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
     toast.success('Draft disimpan di perangkat ini')
@@ -197,6 +265,7 @@ export function LuxeSellerOnboardingPage() {
       if (prev) URL.revokeObjectURL(prev)
       return URL.createObjectURL(f)
     })
+    void uploadSellerFile(f, 'ktp_image', setKtpImageUrl)
   }
 
   function onSelfieFile(files: FileList | null) {
@@ -206,6 +275,30 @@ export function LuxeSellerOnboardingPage() {
       if (prev) URL.revokeObjectURL(prev)
       return URL.createObjectURL(f)
     })
+    void uploadSellerFile(f, 'selfie_ktp', setSelfieKtpUrl)
+  }
+
+  async function uploadSellerFile(
+    file: File,
+    kind: string,
+    setValue: (url: string) => void,
+  ) {
+    try {
+      setUploadingKey(kind)
+      const form = new FormData()
+      form.set('file', file)
+      form.set('kind', kind)
+      const res = await apiJson<{ url: string }>('/api/seller/applications/upload', {
+        method: 'POST',
+        body: form,
+      })
+      setValue(res.url)
+      toast.success('File berhasil diunggah ke Supabase Storage')
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Gagal upload file')
+    } finally {
+      setUploadingKey((prev) => (prev === kind ? null : prev))
+    }
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -218,12 +311,6 @@ export function LuxeSellerOnboardingPage() {
       return
     }
 
-    const digits = ktpNumber.replace(/\D/g, '')
-    if (digits.length !== 16) {
-      toast.error('Nomor KTP harus 16 digit')
-      return
-    }
-
     const urlOk = (s: string) => {
       try {
         const u = new URL(s.trim())
@@ -233,15 +320,110 @@ export function LuxeSellerOnboardingPage() {
       }
     }
 
-    const ktpU = ktpImageUrl.trim()
-    const selfieU = selfieKtpUrl.trim()
-    if (!urlOk(ktpU) || ktpU.length > 512) {
-      toast.error('URL gambar KTP tidak valid (HTTPS/HTTP, max 512 karakter)')
-      return
+    const validateUrlField = (value: string, label: string) => {
+      const s = value.trim()
+      if (!urlOk(s) || s.length > 512) {
+        toast.error(`${label} tidak valid (HTTPS/HTTP, max 512 karakter)`)
+        return null
+      }
+      return s
     }
-    if (!urlOk(selfieU) || selfieU.length > 512) {
-      toast.error('URL selfie KTP tidak valid (HTTPS/HTTP, max 512 karakter)')
-      return
+
+    let requestBody: Record<string, unknown> = {
+      store_name: name,
+      store_description: description.trim() === '' ? null : description.trim(),
+      business_type: businessType,
+    }
+
+    if (businessType === 'perorangan') {
+      const personName = fullName.trim()
+      if (personName.length < 2) {
+        toast.error('Nama pemilik minimal 2 karakter')
+        return
+      }
+
+      const digits = ktpNumber.replace(/\D/g, '')
+      if (digits.length !== 16) {
+        toast.error('Nomor KTP harus 16 digit')
+        return
+      }
+
+      const ktpU = validateUrlField(ktpImageUrl, 'URL gambar KTP')
+      if (!ktpU) return
+      const selfieU = validateUrlField(selfieKtpUrl, 'URL selfie verifikasi wajah')
+      if (!selfieU) return
+
+      requestBody = {
+        ...requestBody,
+        full_name: personName,
+        ktp_number: digits,
+        ktp_image: ktpU,
+        selfie_ktp: selfieU,
+      }
+    } else {
+      const company = companyName.trim()
+      if (company.length < 2) {
+        toast.error('Nama perusahaan minimal 2 karakter')
+        return
+      }
+      const address = companyAddress.trim()
+      if (address.length < 5) {
+        toast.error('Alamat perusahaan minimal 5 karakter')
+        return
+      }
+      const bank = bankName.trim()
+      if (bank.length < 2) {
+        toast.error('Nama bank minimal 2 karakter')
+        return
+      }
+      const rekening = bankAccountNo.trim()
+      if (rekening.length < 5) {
+        toast.error('No rekening minimal 5 karakter')
+        return
+      }
+
+      const supporting = validateUrlField(supportingDocUrl, 'Dokumen pendukung')
+      if (!supporting) return
+
+      const nibNo = nibNumber.trim()
+      const nibImg = nibImageUrl.trim()
+      if (hasNib) {
+        if (nibNo.length < 3) {
+          toast.error('Nomor NIB wajib diisi')
+          return
+        }
+        if (!validateUrlField(nibImg, 'Bukti NIB')) return
+      }
+
+      const npwpNo = npwpNumber.trim()
+      const npwpImg = npwpImageUrl.trim()
+      if (hasNpwp) {
+        if (npwpNo.length < 3) {
+          toast.error('Nomor NPWP wajib diisi')
+          return
+        }
+        if (!validateUrlField(npwpImg, 'Bukti NPWP')) return
+      }
+
+      const deedImg = deedImageUrl.trim()
+      if (hasDeed && !validateUrlField(deedImg, 'Akta pendirian')) return
+
+      requestBody = {
+        ...requestBody,
+        company_name: company,
+        company_address: address,
+        bank_name: bank,
+        bank_account_no: rekening,
+        has_nib: hasNib,
+        nib_number: hasNib ? nibNo : null,
+        nib_image: hasNib ? nibImg : null,
+        has_npwp: hasNpwp,
+        npwp_number: hasNpwp ? npwpNo : null,
+        npwp_image: hasNpwp ? npwpImg : null,
+        has_deed: hasDeed,
+        deed_image: hasDeed ? deedImg : null,
+        supporting_doc: supporting,
+      }
     }
 
     setSubmitting(true)
@@ -250,12 +432,7 @@ export function LuxeSellerOnboardingPage() {
         API_PATHS.seller.applications,
         {
           method: 'POST',
-          body: JSON.stringify({
-            store_name: name,
-            ktp_number: digits,
-            ktp_image: ktpU,
-            selfie_ktp: selfieU,
-          }),
+          body: JSON.stringify(requestBody),
         },
       )
       clearDraft()
@@ -466,11 +643,40 @@ export function LuxeSellerOnboardingPage() {
                     Store Information
                   </h2>
                   <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">
-                    Step 1 of 3 · {category}
+                    Step 1 of 3
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6">
+                  <Field label="Tipe Bisnis">
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        disabled={hasPending || !!shop}
+                        onClick={() => setBusinessType('perorangan')}
+                        className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-widest transition-all ${
+                          businessType === 'perorangan'
+                            ? 'border-[#d4ff3f]/70 bg-[#d4ff3f]/10 text-[#d4ff3f]'
+                            : 'border-white/10 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        Perorangan
+                      </button>
+                      <button
+                        type="button"
+                        disabled={hasPending || !!shop}
+                        onClick={() => setBusinessType('perusahaan')}
+                        className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-widest transition-all ${
+                          businessType === 'perusahaan'
+                            ? 'border-[#d4ff3f]/70 bg-[#d4ff3f]/10 text-[#d4ff3f]'
+                            : 'border-white/10 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        Perusahaan
+                      </button>
+                    </div>
+                  </Field>
+
                   <Field label="Store Name">
                     <div className="relative">
                       <Store className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
@@ -486,28 +692,24 @@ export function LuxeSellerOnboardingPage() {
                     </div>
                   </Field>
 
-                  <Field label="Business Category">
-                    <div className="relative">
-                      <Tag className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
-                      <select
-                        value={category}
-                        onChange={(e) =>
-                          setCategory(e.target.value as (typeof BUSINESS_CATEGORIES)[number])
-                        }
-                        disabled={hasPending || !!shop}
-                        className="luxe-portal-focus w-full cursor-pointer appearance-none rounded-2xl border border-white/5 bg-black/40 py-4 pl-12 pr-10 text-sm font-medium text-white disabled:opacity-50"
-                      >
-                        {BUSINESS_CATEGORIES.map((c) => (
-                          <option key={c} value={c} className="bg-zinc-900">
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-                    </div>
-                  </Field>
+                  {businessType === 'perorangan' ? (
+                    <Field label="Nama Pemilik (Sesuai KTP)">
+                      <div className="relative">
+                        <Users className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+                        <input
+                          type="text"
+                          placeholder="Nama lengkap sesuai KTP"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          disabled={hasPending || !!shop}
+                          maxLength={255}
+                          className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 py-4 pl-12 pr-4 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                        />
+                      </div>
+                    </Field>
+                  ) : null}
 
-                  <div className="space-y-2 sm:col-span-2">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="ml-1 text-[10px] font-black uppercase tracking-widest text-zinc-500">
                         Store Description
@@ -527,7 +729,7 @@ export function LuxeSellerOnboardingPage() {
                       className="luxe-portal-focus w-full resize-none rounded-2xl border border-white/5 bg-black/40 p-6 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
                     />
                     <p className="text-[10px] text-zinc-600">
-                      Untuk reviewer internal — tidak dikirim ke API saat ini.
+                      Deskripsi toko ini akan ikut dikirim ke API.
                     </p>
                   </div>
                 </div>
@@ -543,127 +745,334 @@ export function LuxeSellerOnboardingPage() {
                     className="text-xl font-black uppercase tracking-tight"
                     style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
                   >
-                    KTP Verification
+                    {businessType === 'perorangan'
+                      ? 'KTP Verification'
+                      : 'Company Verification'}
                   </h2>
                   <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">
                     Step 2 of 3
                   </p>
                 </div>
 
-                <div className="space-y-6">
-                  <Field label="KTP Number (16 Digits)">
-                    <div className="relative">
-                      <CreditCard className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        maxLength={24}
-                        placeholder="317XXXXXXXXXXXXX"
-                        value={ktpNumber}
-                        onChange={(e) => setKtpNumber(e.target.value)}
-                        disabled={hasPending || !!shop}
-                        className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 py-4 pl-12 pr-4 text-sm font-medium tracking-[0.15em] text-white placeholder:text-zinc-600 disabled:opacity-50"
-                      />
-                    </div>
-                  </Field>
-
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div className="space-y-3">
-                      <p className="ml-1 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                        KTP Image Upload
-                      </p>
-                      <input
-                        ref={ktpFileRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="hidden"
-                        onChange={(e) => onKtpFile(e.target.files)}
-                      />
-                      <button
-                        type="button"
-                        disabled={hasPending || !!shop}
-                        onClick={() => ktpFileRef.current?.click()}
-                        className="group flex w-full cursor-pointer flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-white/5 p-8 text-center transition-all hover:border-[#d4ff3f]/30 hover:bg-white/2 disabled:pointer-events-none disabled:opacity-50"
-                      >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-600 transition-colors group-hover:text-[#d4ff3f]">
-                          <UploadCloud className="h-7 w-7" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-xs font-bold">Drop KTP image here</p>
-                          <p className="text-[10px] uppercase tracking-widest text-zinc-600">
-                            JPG, PNG (Max 5MB) · preview only
-                          </p>
-                        </div>
-                      </button>
-                      {ktpPreview ? (
-                        <img
-                          src={ktpPreview}
-                          alt="KTP preview"
-                          className="max-h-40 rounded-xl border border-white/10 object-contain"
-                        />
-                      ) : null}
-                      <Field label="Public URL (HTTPS)">
+                {businessType === 'perorangan' ? (
+                  <div className="space-y-6">
+                    <Field label="KTP Number (16 Digits)">
+                      <div className="relative">
+                        <CreditCard className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
                         <input
-                          type="url"
-                          placeholder="https://..."
-                          value={ktpImageUrl}
-                          onChange={(e) => setKtpImageUrl(e.target.value)}
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          maxLength={24}
+                          placeholder="317XXXXXXXXXXXXX"
+                          value={ktpNumber}
+                          onChange={(e) => setKtpNumber(e.target.value)}
                           disabled={hasPending || !!shop}
-                          maxLength={512}
-                          className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 px-4 py-3 text-xs font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                          className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 py-4 pl-12 pr-4 text-sm font-medium tracking-[0.15em] text-white placeholder:text-zinc-600 disabled:opacity-50"
                         />
-                      </Field>
-                    </div>
+                      </div>
+                    </Field>
 
-                    <div className="space-y-3">
-                      <p className="ml-1 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                        Selfie with KTP
-                      </p>
-                      <input
-                        ref={selfieFileRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="hidden"
-                        onChange={(e) => onSelfieFile(e.target.files)}
-                      />
-                      <button
-                        type="button"
-                        disabled={hasPending || !!shop}
-                        onClick={() => selfieFileRef.current?.click()}
-                        className="group flex w-full cursor-pointer flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-white/5 p-8 text-center transition-all hover:border-[#d4ff3f]/30 hover:bg-white/2 disabled:pointer-events-none disabled:opacity-50"
-                      >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-600 transition-colors group-hover:text-[#d4ff3f]">
-                          <Camera className="h-7 w-7" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-xs font-bold">Capture or Upload</p>
-                          <p className="text-[10px] uppercase tracking-widest text-zinc-600">
-                            Face must be clear · preview only
-                          </p>
-                        </div>
-                      </button>
-                      {selfiePreview ? (
-                        <img
-                          src={selfiePreview}
-                          alt="Selfie preview"
-                          className="max-h-40 rounded-xl border border-white/10 object-contain"
-                        />
-                      ) : null}
-                      <Field label="Public URL (HTTPS)">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      <div className="space-y-3">
+                        <p className="ml-1 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                          KTP Image Upload
+                        </p>
                         <input
-                          type="url"
-                          placeholder="https://..."
-                          value={selfieKtpUrl}
-                          onChange={(e) => setSelfieKtpUrl(e.target.value)}
-                          disabled={hasPending || !!shop}
-                          maxLength={512}
-                          className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 px-4 py-3 text-xs font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                          ref={ktpFileRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={(e) => onKtpFile(e.target.files)}
                         />
-                      </Field>
+                        <button
+                          type="button"
+                          disabled={hasPending || !!shop}
+                          onClick={() => ktpFileRef.current?.click()}
+                          className="group flex w-full cursor-pointer flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-white/5 p-8 text-center transition-all hover:border-[#d4ff3f]/30 hover:bg-white/2 disabled:pointer-events-none disabled:opacity-50"
+                        >
+                          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-600 transition-colors group-hover:text-[#d4ff3f]">
+                            <UploadCloud className="h-7 w-7" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold">Drop KTP image here</p>
+                            <p className="text-[10px] uppercase tracking-widest text-zinc-600">
+                              JPG, PNG (Max 5MB) · preview only
+                            </p>
+                          </div>
+                        </button>
+                        {ktpPreview ? (
+                          <img
+                            src={ktpPreview}
+                            alt="KTP preview"
+                            className="max-h-40 rounded-xl border border-white/10 object-contain"
+                          />
+                        ) : null}
+                        <Field label="Public URL (HTTPS)">
+                          <input
+                            type="url"
+                            placeholder="https://..."
+                            value={ktpImageUrl}
+                            onChange={(e) => setKtpImageUrl(e.target.value)}
+                            disabled={hasPending || !!shop}
+                            maxLength={512}
+                            className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 px-4 py-3 text-xs font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                          />
+                          <UploadToSupabaseButton
+                            disabled={hasPending || !!shop}
+                            loading={uploadingKey === 'ktp_image'}
+                            onPick={(file) =>
+                              void uploadSellerFile(file, 'ktp_image', setKtpImageUrl)
+                            }
+                          />
+                        </Field>
+                      </div>
+
+                      <div className="space-y-3">
+                        <p className="ml-1 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                          Selfie with KTP
+                        </p>
+                        <input
+                          ref={selfieFileRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={(e) => onSelfieFile(e.target.files)}
+                        />
+                        <button
+                          type="button"
+                          disabled={hasPending || !!shop}
+                          onClick={() => selfieFileRef.current?.click()}
+                          className="group flex w-full cursor-pointer flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-white/5 p-8 text-center transition-all hover:border-[#d4ff3f]/30 hover:bg-white/2 disabled:pointer-events-none disabled:opacity-50"
+                        >
+                          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-600 transition-colors group-hover:text-[#d4ff3f]">
+                            <Camera className="h-7 w-7" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold">Capture or Upload</p>
+                            <p className="text-[10px] uppercase tracking-widest text-zinc-600">
+                              Face must be clear · preview only
+                            </p>
+                          </div>
+                        </button>
+                        {selfiePreview ? (
+                          <img
+                            src={selfiePreview}
+                            alt="Selfie preview"
+                            className="max-h-40 rounded-xl border border-white/10 object-contain"
+                          />
+                        ) : null}
+                        <Field label="Public URL (HTTPS)">
+                          <input
+                            type="url"
+                            placeholder="https://..."
+                            value={selfieKtpUrl}
+                            onChange={(e) => setSelfieKtpUrl(e.target.value)}
+                            disabled={hasPending || !!shop}
+                            maxLength={512}
+                            className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 px-4 py-3 text-xs font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                          />
+                          <UploadToSupabaseButton
+                            disabled={hasPending || !!shop}
+                            loading={uploadingKey === 'selfie_ktp'}
+                            onPick={(file) =>
+                              void uploadSellerFile(file, 'selfie_ktp', setSelfieKtpUrl)
+                            }
+                          />
+                        </Field>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      <Field label="Nama Perusahaan">
+                        <div className="relative">
+                          <Building2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+                          <input
+                            type="text"
+                            placeholder="PT Contoh Sejahtera"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            disabled={hasPending || !!shop}
+                            maxLength={255}
+                            className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 py-4 pl-12 pr-4 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                          />
+                        </div>
+                      </Field>
+                      <Field label="Nama Bank">
+                        <div className="relative">
+                          <Landmark className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+                          <input
+                            type="text"
+                            placeholder="BCA"
+                            value={bankName}
+                            onChange={(e) => setBankName(e.target.value)}
+                            disabled={hasPending || !!shop}
+                            maxLength={255}
+                            className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 py-4 pl-12 pr-4 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                          />
+                        </div>
+                      </Field>
+                    </div>
+
+                    <Field label="Alamat Perusahaan">
+                      <div className="relative">
+                        <MapPin className="pointer-events-none absolute left-4 top-6 h-4 w-4 text-zinc-600" />
+                        <textarea
+                          rows={3}
+                          placeholder="Alamat lengkap perusahaan"
+                          value={companyAddress}
+                          onChange={(e) => setCompanyAddress(e.target.value)}
+                          disabled={hasPending || !!shop}
+                          maxLength={1000}
+                          className="luxe-portal-focus w-full resize-none rounded-2xl border border-white/5 bg-black/40 p-4 pl-12 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                        />
+                      </div>
+                    </Field>
+
+                    <Field label="No Rekening">
+                      <div className="relative">
+                        <CreditCard className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+                        <input
+                          type="text"
+                          placeholder="Nomor rekening perusahaan"
+                          value={bankAccountNo}
+                          onChange={(e) => setBankAccountNo(e.target.value)}
+                          disabled={hasPending || !!shop}
+                          maxLength={64}
+                          className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 py-4 pl-12 pr-4 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                        />
+                      </div>
+                    </Field>
+
+                    <ToggleField
+                      label="Memiliki NIB?"
+                      value={hasNib}
+                      disabled={hasPending || !!shop}
+                      onChange={setHasNib}
+                    />
+                    {hasNib ? (
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <Field label="Nomor NIB">
+                          <input
+                            type="text"
+                            placeholder="Nomor NIB"
+                            value={nibNumber}
+                            onChange={(e) => setNibNumber(e.target.value)}
+                            disabled={hasPending || !!shop}
+                            maxLength={64}
+                            className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 px-4 py-3 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                          />
+                        </Field>
+                        <Field label="Bukti NIB (URL Gambar)">
+                          <input
+                            type="url"
+                            placeholder="https://..."
+                            value={nibImageUrl}
+                            onChange={(e) => setNibImageUrl(e.target.value)}
+                            disabled={hasPending || !!shop}
+                            maxLength={512}
+                            className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 px-4 py-3 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                          />
+                          <UploadToSupabaseButton
+                            disabled={hasPending || !!shop}
+                            loading={uploadingKey === 'nib_image'}
+                            onPick={(file) =>
+                              void uploadSellerFile(file, 'nib_image', setNibImageUrl)
+                            }
+                          />
+                        </Field>
+                      </div>
+                    ) : null}
+
+                    <ToggleField
+                      label="Memiliki NPWP?"
+                      value={hasNpwp}
+                      disabled={hasPending || !!shop}
+                      onChange={setHasNpwp}
+                    />
+                    {hasNpwp ? (
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <Field label="Nomor NPWP">
+                          <input
+                            type="text"
+                            placeholder="Nomor NPWP"
+                            value={npwpNumber}
+                            onChange={(e) => setNpwpNumber(e.target.value)}
+                            disabled={hasPending || !!shop}
+                            maxLength={64}
+                            className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 px-4 py-3 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                          />
+                        </Field>
+                        <Field label="Bukti NPWP (URL Gambar)">
+                          <input
+                            type="url"
+                            placeholder="https://..."
+                            value={npwpImageUrl}
+                            onChange={(e) => setNpwpImageUrl(e.target.value)}
+                            disabled={hasPending || !!shop}
+                            maxLength={512}
+                            className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 px-4 py-3 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                          />
+                          <UploadToSupabaseButton
+                            disabled={hasPending || !!shop}
+                            loading={uploadingKey === 'npwp_image'}
+                            onPick={(file) =>
+                              void uploadSellerFile(file, 'npwp_image', setNpwpImageUrl)
+                            }
+                          />
+                        </Field>
+                      </div>
+                    ) : null}
+
+                    <ToggleField
+                      label="Memiliki Akta Pendirian?"
+                      value={hasDeed}
+                      disabled={hasPending || !!shop}
+                      onChange={setHasDeed}
+                    />
+                    {hasDeed ? (
+                      <Field label="Akta Pendirian (URL Gambar)">
+                        <input
+                          type="url"
+                          placeholder="https://..."
+                          value={deedImageUrl}
+                          onChange={(e) => setDeedImageUrl(e.target.value)}
+                          disabled={hasPending || !!shop}
+                          maxLength={512}
+                          className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 px-4 py-3 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                        />
+                        <UploadToSupabaseButton
+                          disabled={hasPending || !!shop}
+                          loading={uploadingKey === 'deed_image'}
+                          onPick={(file) =>
+                            void uploadSellerFile(file, 'deed_image', setDeedImageUrl)
+                          }
+                        />
+                      </Field>
+                    ) : null}
+
+                    <Field label="Dokumen Pendukung Lainnya (URL)">
+                      <input
+                        type="url"
+                        placeholder="https://..."
+                        value={supportingDocUrl}
+                        onChange={(e) => setSupportingDocUrl(e.target.value)}
+                        disabled={hasPending || !!shop}
+                        maxLength={512}
+                        className="luxe-portal-focus w-full rounded-2xl border border-white/5 bg-black/40 px-4 py-3 text-sm font-medium text-white placeholder:text-zinc-600 disabled:opacity-50"
+                      />
+                      <UploadToSupabaseButton
+                        disabled={hasPending || !!shop}
+                        loading={uploadingKey === 'supporting_doc'}
+                        onPick={(file) =>
+                          void uploadSellerFile(file, 'supporting_doc', setSupportingDocUrl)
+                        }
+                      />
+                    </Field>
+                  </div>
+                )}
               </section>
 
               <section
@@ -685,12 +1094,35 @@ export function LuxeSellerOnboardingPage() {
                     <span className="text-zinc-600">Toko:</span> {storeName || '—'}
                   </li>
                   <li>
-                    <span className="text-zinc-600">KTP:</span>{' '}
-                    {ktpNumber.replace(/\D/g, '').length === 16
-                      ? '•••• •••• •••• ' +
-                        ktpNumber.replace(/\D/g, '').slice(12)
+                    <span className="text-zinc-600">Tipe Bisnis:</span>{' '}
+                    {businessType === 'perorangan' ? 'Perorangan' : 'Perusahaan'}
+                  </li>
+                  <li>
+                    <span className="text-zinc-600">Deskripsi Toko:</span>{' '}
+                    {description.trim().length > 0
+                      ? description.trim().slice(0, 120) +
+                        (description.trim().length > 120 ? '…' : '')
                       : '—'}
                   </li>
+                  {businessType === 'perorangan' ? (
+                    <li>
+                      <span className="text-zinc-600">KTP:</span>{' '}
+                      {ktpNumber.replace(/\D/g, '').length === 16
+                        ? '•••• •••• •••• ' + ktpNumber.replace(/\D/g, '').slice(12)
+                        : '—'}
+                    </li>
+                  ) : (
+                    <>
+                      <li>
+                        <span className="text-zinc-600">Perusahaan:</span>{' '}
+                        {companyName || '—'}
+                      </li>
+                      <li>
+                        <span className="text-zinc-600">NIB:</span>{' '}
+                        {hasNib ? 'Ya' : 'Tidak'}
+                      </li>
+                    </>
+                  )}
                 </ul>
               </section>
 
@@ -1000,6 +1432,80 @@ function Field({
       </label>
       {children}
     </div>
+  )
+}
+
+function ToggleField({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string
+  value: boolean
+  disabled?: boolean
+  onChange: (next: boolean) => void
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="ml-1 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+        {label}
+      </label>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(true)}
+          className={`rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${
+            value
+              ? 'border-[#d4ff3f]/70 bg-[#d4ff3f]/10 text-[#d4ff3f]'
+              : 'border-white/10 text-zinc-500 hover:text-white'
+          }`}
+        >
+          Ya
+        </button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(false)}
+          className={`rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${
+            !value
+              ? 'border-[#d4ff3f]/70 bg-[#d4ff3f]/10 text-[#d4ff3f]'
+              : 'border-white/10 text-zinc-500 hover:text-white'
+          }`}
+        >
+          Tidak
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function UploadToSupabaseButton({
+  onPick,
+  disabled,
+  loading,
+}: {
+  onPick: (file: File) => void
+  disabled?: boolean
+  loading?: boolean
+}) {
+  return (
+    <label className="mt-2 inline-flex cursor-pointer items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white">
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        disabled={disabled || loading}
+        onChange={(e) => {
+          const file = e.currentTarget.files?.[0]
+          if (file) onPick(file)
+          e.currentTarget.value = ''
+        }}
+      />
+      <UploadCloud className="h-3.5 w-3.5" />
+      <span>{loading ? 'Uploading…' : 'Upload ke Supabase Storage'}</span>
+    </label>
   )
 }
 

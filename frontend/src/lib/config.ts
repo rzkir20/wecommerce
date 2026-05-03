@@ -18,6 +18,7 @@ export const API_PATHS = {
   },
   seller: {
     applications: '/api/seller/applications',
+    applicationsUpload: '/api/seller/applications/upload',
     applicationsMe: '/api/seller/applications/me',
   },
   shops: {
@@ -43,7 +44,9 @@ export async function apiJson<T>(
 ): Promise<T> {
   const url = `${API_URL}${path}`
   const headers = new Headers(init?.headers)
-  if (!headers.has('Content-Type')) {
+  const isFormDataBody =
+    typeof FormData !== 'undefined' && init?.body instanceof FormData
+  if (!headers.has('Content-Type') && !isFormDataBody) {
     headers.set('Content-Type', 'application/json')
   }
   const token = init?.token

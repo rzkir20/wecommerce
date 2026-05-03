@@ -36,13 +36,17 @@ function NavItem({
       }`}
     >
       {icon}
-      <span className={`text-sm tracking-tight ${active ? 'font-bold' : 'font-semibold'}`}>
+      <span
+        className={`text-sm tracking-tight ${active ? 'font-bold' : 'font-semibold'}`}
+      >
         {label}
       </span>
       {badge ? (
         <span
           className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${
-            badge.tone === 'hot' ? 'bg-rose-600 text-white' : 'bg-muted text-muted-foreground'
+            badge.tone === 'hot'
+              ? 'bg-rose-600 text-white'
+              : 'bg-muted text-muted-foreground'
           }`}
         >
           {badge.text}
@@ -77,9 +81,21 @@ export function ProfileSidebar() {
               active={isProfile}
               icon={<UserCircle className="h-5 w-5 text-rose-600" />}
             />
-            <NavItem to="/profile" label="Banks & Cards" icon={<CreditCard className="h-5 w-5" />} />
-            <NavItem to="/profile" label="Addresses" icon={<MapPin className="h-5 w-5" />} />
-            <NavItem to="/profile" label="Security" icon={<ShieldCheck className="h-5 w-5" />} />
+            <NavItem
+              to="/profile"
+              label="Banks & Cards"
+              icon={<CreditCard className="h-5 w-5" />}
+            />
+            <NavItem
+              to="/profile"
+              label="Addresses"
+              icon={<MapPin className="h-5 w-5" />}
+            />
+            <NavItem
+              to="/profile"
+              label="Security"
+              icon={<ShieldCheck className="h-5 w-5" />}
+            />
           </nav>
         </div>
 
@@ -94,14 +110,22 @@ export function ProfileSidebar() {
               icon={<ShoppingBag className="h-5 w-5" />}
               badge={{ text: '12', tone: 'neutral' }}
             />
-            <NavItem to="/profile" label="Activity" icon={<BellDot className="h-5 w-5" />} />
+            <NavItem
+              to="/profile"
+              label="Activity"
+              icon={<BellDot className="h-5 w-5" />}
+            />
             <NavItem
               to="/profile"
               label="Vouchers"
               icon={<TicketPercent className="h-5 w-5" />}
               badge={{ text: 'HOT', tone: 'hot' }}
             />
-            <NavItem to="/profile" label="Luxe Rewards" icon={<Coins className="h-5 w-5" />} />
+            <NavItem
+              to="/profile"
+              label="Luxe Rewards"
+              icon={<Coins className="h-5 w-5" />}
+            />
           </nav>
         </div>
       </div>
@@ -116,12 +140,14 @@ export function ProfileSidebar() {
           <p className="mb-4 text-xs text-background/70">
             Dapatkan gratis ongkir tanpa batas & akses eksklusif.
           </p>
-          <button
-            type="button"
-            className="w-full rounded-xl bg-[#d4ff3f] py-3 text-xs font-black tracking-widest text-black uppercase transition-transform hover:scale-[1.02]"
-          >
-            Pelajari Lebih
-          </button>
+          <Link to="/portal">
+            <button
+              type="button"
+              className="w-full rounded-xl bg-[#d4ff3f] py-3 text-xs font-black tracking-widest text-black uppercase transition-transform hover:scale-[1.02]"
+            >
+              Pelajari Lebih
+            </button>
+          </Link>
         </div>
         <Crown className="absolute -right-4 -bottom-4 h-20 w-20 rotate-12 text-white/10 transition-transform duration-500 group-hover:rotate-0" />
       </div>
