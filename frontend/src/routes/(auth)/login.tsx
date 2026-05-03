@@ -15,9 +15,14 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { useAuth } from '#/context/AuthContext'
 
-import { API_PATHS, ApiError, apiJson } from '#/lib/config'
+import { ApiError } from '#/lib/config'
 
 import { loginSchema } from '#/lib/validations'
+
+import {
+  fetchQrLoginStatus,
+  initQrLoginSession,
+} from '#/service/auth.service'
 
 export const Route = createFileRoute('/(auth)/login')({
   component: LoginPage,
@@ -63,12 +68,7 @@ function LoginPage() {
     setError(null)
     setQrLoading(true)
     try {
-      const res = await apiJson<{ qrToken: string; expiresAt: number }>(
-        API_PATHS.qr.init,
-        {
-          method: 'POST',
-        },
-      )
+      const res = await initQrLoginSession()
       setQrToken(res.qrToken)
       setQrExpiresAt(res.expiresAt)
       setQrStatus('pending')
@@ -85,11 +85,7 @@ function LoginPage() {
     if (!qrToken || qrStatus !== 'pending') return
     const timer = window.setInterval(async () => {
       try {
-        const res = await apiJson<{
-          status: 'pending' | 'approved' | 'expired' | 'used'
-          expiresAt?: number
-          user?: { id: string; email: string; name: string }
-        }>(API_PATHS.qr.status(qrToken))
+        const res = await fetchQrLoginStatus(qrToken)
         if (res.status === 'pending') {
           if (typeof res.expiresAt === 'number') setQrExpiresAt(res.expiresAt)
           return
@@ -292,12 +288,12 @@ function LoginPage() {
                       >
                         Password
                       </label>
-                      <a
-                        href="#"
+                      <Link
+                        to="/forget-password"
                         className="text-[10px] font-black tracking-widest text-[#d4ff3f] uppercase hover:underline"
                       >
                         Forgot Password?
-                      </a>
+                      </Link>
                     </div>
                     <div className="group relative">
                       <div className="absolute inset-y-0 left-5 flex items-center text-muted-foreground transition-colors group-focus-within:text-[#d4ff3f]">

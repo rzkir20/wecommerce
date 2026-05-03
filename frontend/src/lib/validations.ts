@@ -52,3 +52,29 @@ export const loginSchema = z.object({
 })
 
 export type LoginSchemaInput = z.infer<typeof loginSchema>
+
+export const forgotPasswordEmailSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email('Format email tidak valid'),
+})
+
+export type ForgotPasswordEmailInput = z.infer<typeof forgotPasswordEmailSchema>
+
+export const resetPasswordSchema = z
+  .object({
+    newPassword: z
+      .string()
+      .min(8, 'Password minimal 8 karakter')
+      .regex(/[A-Z]/, 'Password harus mengandung huruf besar')
+      .regex(/[a-z]/, 'Password harus mengandung huruf kecil')
+      .regex(/[0-9]/, 'Password harus mengandung angka'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Konfirmasi kata sandi tidak cocok',
+  })
+
+export type ResetPasswordSchemaInput = z.infer<typeof resetPasswordSchema>

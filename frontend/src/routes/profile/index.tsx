@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 
 import {
   AtSign,
@@ -202,12 +202,14 @@ function InfoCard({
   title,
   desc,
   cta,
+  ctaTo,
   icon,
   tone,
 }: {
   title: string
   desc: React.ReactNode
   cta: string
+  ctaTo?: string
   icon: React.ReactNode
   tone: 'blue' | 'green'
 }) {
@@ -225,12 +227,21 @@ function InfoCard({
       <div>
         <h3 className="mb-1 font-bold">{title}</h3>
         <p className="mb-4 text-xs leading-relaxed text-muted-foreground">{desc}</p>
-        <button
-          type="button"
-          className="text-[11px] font-black tracking-widest text-rose-600 uppercase hover:underline"
-        >
-          {cta}
-        </button>
+        {ctaTo ? (
+          <Link
+            to={ctaTo}
+            className="inline-block text-[11px] font-black tracking-widest text-rose-600 uppercase hover:underline"
+          >
+            {cta}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className="text-[11px] font-black tracking-widest text-rose-600 uppercase hover:underline"
+          >
+            {cta}
+          </button>
+        )}
       </div>
     </div>
   )

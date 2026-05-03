@@ -7,6 +7,9 @@ export const API_PATHS = {
     histories: '/api/auth/histories',
     me: '/api/auth/me',
     logout: '/api/auth/logout',
+    forgotPassword: '/api/auth/forgot-password',
+    forgotPasswordVerify: '/api/auth/forgot-password/verify',
+    forgotPasswordReset: '/api/auth/forgot-password/reset',
   },
   qr: {
     init: '/api/qr/init',

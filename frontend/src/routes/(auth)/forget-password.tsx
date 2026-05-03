@@ -1,12 +1,50 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 
 import { ArrowLeft, Info, Mail, Send } from 'lucide-react'
+
+import { useState } from 'react'
+
+import { ApiError } from '#/lib/config'
+
+import { forgotPasswordEmailSchema } from '#/lib/validations'
+
+import { requestForgotPassword } from '#/service/auth.service'
 
 export const Route = createFileRoute('/(auth)/forget-password')({
   component: ForgetPasswordPage,
 })
 
 function ForgetPasswordPage() {
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    const parsed = forgotPasswordEmailSchema.safeParse({ email })
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'Email tidak valid')
+      return
+    }
+
+    setLoading(true)
+    try {
+      await requestForgotPassword(parsed.data.email)
+      await navigate({
+        to: '/verifications',
+        search: { email: parsed.data.email, flow: 'forgot-password' },
+      })
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : 'Gagal mengirim kode verifikasi.',
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col overflow-hidden bg-background text-foreground md:flex-row">
       <section className="relative hidden h-screen overflow-hidden md:flex md:w-1/2 lg:w-[55%]">
@@ -59,12 +97,20 @@ function ForgetPasswordPage() {
               Forgot Password
             </h3>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Enter your registered email address and we'll send you a secure
-              link to reset your credentials.
+              Masukkan email terdaftar. Kami mengirimkan kode OTP 6 digit untuk
+              verifikasi, lalu Anda dapat mengatur password baru.
             </p>
           </div>
 
-          <form className="space-y-8">
+          <form className="space-y-8" onSubmit={onSubmit}>
+            {error ? (
+              <p
+                className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+                role="alert"
+              >
+                {error}
+              </p>
+            ) : null}
             <div className="space-y-6">
               <div className="group space-y-2">
                 <label
@@ -79,6 +125,9 @@ function ForgetPasswordPage() {
                     type="email"
                     id="email"
                     name="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(ev) => setEmail(ev.target.value)}
                     placeholder="name@luxury.com"
                     className="w-full rounded-2xl border border-border bg-muted/50 py-4 pr-6 pl-14 text-sm text-foreground placeholder:text-muted-foreground transition-all focus:border-[#d4ff3f]/30 focus:ring-1 focus:ring-[#d4ff3f]/20 focus:outline-none"
                   />
@@ -88,8 +137,8 @@ function ForgetPasswordPage() {
               <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/40 p-4">
                 <Info className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <p className="text-[11px] leading-normal text-muted-foreground">
-                  We will never share your email with third parties. A recovery
-                  link will be valid for 60 minutes.
+                  Langkah berikutnya: halaman verifikasi kode, lalu atur password
+                  baru. Kode berlaku sekitar 10 menit.
                 </p>
               </div>
             </div>
@@ -97,19 +146,20 @@ function ForgetPasswordPage() {
             <div className="space-y-4 pt-2">
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white py-5 text-xs font-black tracking-widest text-black uppercase transition-all duration-300 active:scale-[0.98] hover:bg-[#d4ff3f] hover:shadow-[0_0_25px_rgba(212,255,63,0.15)]"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white py-5 text-xs font-black tracking-widest text-black uppercase transition-all duration-300 active:scale-[0.98] hover:bg-[#d4ff3f] hover:shadow-[0_0_25px_rgba(212,255,63,0.15)] disabled:opacity-60"
               >
-                <span>Send Reset Link</span>
+                <span>{loading ? 'Mengirim…' : 'Kirim kode OTP'}</span>
                 <Send className="h-4 w-4" />
               </button>
 
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border py-4 text-[10px] font-bold tracking-widest text-muted-foreground uppercase transition-all hover:bg-muted hover:text-foreground"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span>Back to Sign In</span>
-              </a>
+              </Link>
             </div>
           </form>
 

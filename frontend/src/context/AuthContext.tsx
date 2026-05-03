@@ -7,9 +7,14 @@ import {
   useState,
 } from 'react'
 
-import { API_PATHS, apiJson } from '../lib/config'
-
 import type { UserRole } from '../lib/role-proxy'
+
+import {
+  fetchAuthMe,
+  loginWithPassword,
+  logoutRequest,
+  registerAccount,
+} from '../service/auth.service'
 
 export type AuthUser = {
   id: string
@@ -54,7 +59,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
 
   const refreshSession = useCallback(async (): Promise<AuthUser | null> => {
     try {
-      const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.me)
+      const res = await fetchAuthMe()
       setUser(res.user)
       return res.user
     } catch {
@@ -76,19 +81,14 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   }, [refreshSession])
 
   const logout = useCallback(() => {
-    void apiJson<{ ok: boolean }>(API_PATHS.auth.logout, {
-      method: 'POST',
-    }).catch(() => {
+    void logoutRequest().catch(() => {
       // Tetap clear local state walau request logout gagal.
     })
     setUser(null)
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.login, {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    })
+    const res = await loginWithPassword(email, password)
     setUser(res.user)
   }, [])
 
@@ -99,10 +99,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       password: string,
       phone: string = '',
     ) => {
-      const res = await apiJson<{ user: AuthUser }>(API_PATHS.auth.register, {
-        method: 'POST',
-        body: JSON.stringify({ name, email, password, phone }),
-      })
+      const res = await registerAccount(name, email, password, phone)
       setUser(res.user)
     },
     [],

@@ -331,7 +331,7 @@ export function Header({
                       {userName}
                     </p>
                     <Link
-                      to="/change-password"
+                      to="/forget-password"
                       className="mt-1 inline-block text-xs font-semibold text-[#d4ff3f]"
                       onClick={() => setMobileDrawerOpen(false)}
                     >

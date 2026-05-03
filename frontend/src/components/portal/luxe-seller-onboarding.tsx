@@ -316,7 +316,7 @@ export function LuxeSellerOnboardingPage() {
           <SidebarNavLink to="/cart" icon={FileText} label="Orders" />
           <SidebarNavLink to="/products" icon={Package} label="Products" />
           <SidebarNavLink to="/products" icon={Users} label="Customers" />
-          <SidebarNavLink to="/change-password" icon={Settings} label="Settings" />
+          <SidebarNavLink to="/forget-password" icon={Settings} label="Settings" />
           <SidebarNavLink to="/products" icon={TrendingUp} label="Marketing" />
           <Link
             to="/portal"
