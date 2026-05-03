@@ -1,10 +1,3 @@
-export type UserRole =
-  | 'super_admins'
-  | 'admins'
-  | 'affiliate'
-  | 'users'
-  | 'seller'
-
 export function getRoleHomePath(role?: UserRole | null): string {
   switch (role) {
     case 'super_admins':

@@ -1,4 +1,4 @@
-import type { AuthUser } from '#/context/AuthContext'
+import { queryOptions } from '@tanstack/react-query'
 
 import { API_PATHS, apiJson } from '#/lib/config'
 
@@ -6,6 +6,11 @@ export {
   PWD_RESET_EMAIL_KEY,
   PWD_RESET_TOKEN_KEY,
 } from '#/lib/password-reset-keys'
+
+/** Kunci cache server state untuk pengguna yang sedang login (`GET/PATCH /me`). */
+export const AUTH_ME_QUERY_KEY = ['auth', 'me'] as const
+
+const AUTH_ME_STALE_MS = 2 * 60_000
 
 export async function loginWithPassword(
   email: string,
@@ -31,6 +36,25 @@ export async function registerAccount(
 
 export async function fetchAuthMe(): Promise<{ user: AuthUser }> {
   return apiJson<{ user: AuthUser }>(API_PATHS.auth.me)
+}
+
+/** Opsi TanStack Query + cache GET /auth/me (baca profil sesi). */
+export function authMeQueryOptions() {
+  return queryOptions({
+    queryKey: AUTH_ME_QUERY_KEY,
+    queryFn: fetchAuthMe,
+    staleTime: AUTH_ME_STALE_MS,
+    gcTime: 30 * 60_000,
+  })
+}
+
+export async function patchAuthProfile(
+  body: UpdateProfileBody,
+): Promise<{ user: AuthUser }> {
+  return apiJson<{ user: AuthUser }>(API_PATHS.auth.me, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
 }
 
 export async function logoutRequest(): Promise<{ ok: boolean }> {
@@ -72,18 +96,10 @@ export async function resetForgottenPassword(input: {
   })
 }
 
-export type QrInitResponse = { qrToken: string; expiresAt: number }
-
 export async function initQrLoginSession(): Promise<QrInitResponse> {
   return apiJson<QrInitResponse>(API_PATHS.qr.init, {
     method: 'POST',
   })
-}
-
-export type QrLoginStatusResponse = {
-  status: 'pending' | 'approved' | 'expired' | 'used'
-  expiresAt?: number
-  user?: { id: string; email: string; name: string }
 }
 
 export async function fetchQrLoginStatus(

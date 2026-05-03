@@ -7,44 +7,16 @@ import {
   useState,
 } from 'react'
 
-import type { UserRole } from '../lib/role-proxy'
+import { useQueryClient } from '@tanstack/react-query'
 
 import {
-  fetchAuthMe,
+  AUTH_ME_QUERY_KEY,
+  authMeQueryOptions,
   loginWithPassword,
   logoutRequest,
+  patchAuthProfile,
   registerAccount,
-} from '../service/auth.service'
-
-export type AuthUser = {
-  id: string
-  email: string
-  name: string
-  phone: string | null
-  role?: UserRole
-}
-
-type AuthProviderProps = {
-  children: React.ReactNode
-  initialUser?: AuthUser | null
-}
-
-type AuthState = {
-  user: AuthUser | null
-  ready: boolean
-}
-
-type AuthContextValue = AuthState & {
-  login: (email: string, password: string) => Promise<void>
-  refreshSession: () => Promise<AuthUser | null>
-  register: (
-    name: string,
-    email: string,
-    password: string,
-    phone?: string,
-  ) => Promise<void>
-  logout: () => void
-}
+} from '#/service/auth.service'
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
@@ -53,20 +25,30 @@ export function avatarUrlForEmail(email: string): string {
 }
 
 export function AuthProvider({ children, initialUser }: AuthProviderProps) {
+  const queryClient = useQueryClient()
+
   /** Optimistic SSR hint; canonical session lives on API cookie (often another origin). */
   const [user, setUser] = useState<AuthUser | null>(initialUser ?? null)
   const [ready, setReady] = useState(false)
 
+  /** Seed TanStack Query agar pembaca pertama memakai data loader tanpa burst ganda. */
+  useEffect(() => {
+    if (initialUser) {
+      queryClient.setQueryData(AUTH_ME_QUERY_KEY, { user: initialUser })
+    }
+  }, [initialUser, queryClient])
+
   const refreshSession = useCallback(async (): Promise<AuthUser | null> => {
     try {
-      const res = await fetchAuthMe()
+      const res = await queryClient.fetchQuery(authMeQueryOptions())
       setUser(res.user)
       return res.user
     } catch {
       setUser(null)
+      queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY })
       return null
     }
-  }, [])
+  }, [queryClient])
 
   useEffect(() => {
     let cancelled = false
@@ -85,12 +67,17 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       // Tetap clear local state walau request logout gagal.
     })
     setUser(null)
-  }, [])
+    queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY })
+  }, [queryClient])
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await loginWithPassword(email, password)
-    setUser(res.user)
-  }, [])
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const res = await loginWithPassword(email, password)
+      setUser(res.user)
+      queryClient.setQueryData(AUTH_ME_QUERY_KEY, res)
+    },
+    [queryClient],
+  )
 
   const register = useCallback(
     async (
@@ -101,8 +88,19 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     ) => {
       const res = await registerAccount(name, email, password, phone)
       setUser(res.user)
+      queryClient.setQueryData(AUTH_ME_QUERY_KEY, res)
     },
-    [],
+    [queryClient],
+  )
+
+  const updateProfile = useCallback(
+    async (body: UpdateProfileBody) => {
+      const res = await patchAuthProfile(body)
+      setUser(res.user)
+      queryClient.setQueryData(AUTH_ME_QUERY_KEY, res)
+      return res
+    },
+    [queryClient],
   )
 
   const value = useMemo<AuthContextValue>(
@@ -112,9 +110,18 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       login,
       refreshSession,
       register,
+      updateProfile,
       logout,
     }),
-    [user, ready, login, refreshSession, register, logout],
+    [
+      user,
+      ready,
+      login,
+      refreshSession,
+      register,
+      updateProfile,
+      logout,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
